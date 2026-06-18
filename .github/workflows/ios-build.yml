@@ -95,7 +95,7 @@ for f in os.listdir(d):
         b.paste(i,(0,0),i);b.convert('RGB').save(p,'PNG')
         print(f'fixed: {f}')
 print('done')
-"
+" || echo 'Alpha strip skipped (non-fatal)'
 
       - name: Setup Code Signing
         env:
