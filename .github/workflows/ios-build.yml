@@ -96,6 +96,20 @@ jobs:
           rm cert.p12
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
 
+      - name: Setup App Store Connect API Key
+        env:
+          API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
+          API_KEY_B64: ${{ secrets.APP_STORE_CONNECT_API_KEY_B64 }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo "$API_KEY_B64" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8
+          mkdir -p ~/.config
+          cat > ~/.config/xcode.env << XOF
+          export APP_STORE_CONNECT_API_KEY_ID=$API_KEY_ID
+          export APP_STORE_CONNECT_API_ISSUER_ID=$API_ISSUER_ID
+          XOF
+
       - name: Install Pods
         run: |
           cd ios/App
