@@ -35,6 +35,9 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      - name: Sync web assets to www
+        run: node scripts/sync-www.js
+
       - name: Sync Capacitor iOS
         run: npx cap sync ios
 
