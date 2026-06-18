@@ -177,20 +177,56 @@ jobs:
           if [ -z "$IPA" ]; then echo "No IPA found"; exit 1; fi
           echo "Uploading: $IPA ($(stat -f%z "$IPA") bytes)"
           echo "Upload log:" > /tmp/upload.log
+
+          # Validate first
+          echo "=== VALIDATE ===" | tee -a /tmp/upload.log
+          xcrun altool --validate-app -f "$IPA" \
+            --apiKey "$API_KEY_ID" \
+            --apiIssuer "$API_ISSUER_ID" \
+            -t ios --verbose 2>&1 | tee -a /tmp/upload.log
+          VALIDATE_EXIT=${PIPESTATUS[0]}
+
+          if [ $VALIDATE_EXIT -ne 0 ]; then
+            echo "VALIDATION FAILED - IPA is invalid" | tee -a /tmp/upload.log
+            exit $VALIDATE_EXIT
+          fi
+
+          # Upload
+          echo "=== UPLOAD ===" | tee -a /tmp/upload.log
           xcrun altool --upload-app \
             -f "$IPA" \
             --apiKey "$API_KEY_ID" \
             --apiIssuer "$API_ISSUER_ID" \
-            --apple-id "oscarquiroga@smartmode.fun" \
-            --bundle-id "com.sevenapp.app" \
-            --bundle-version "1" \
-            --bundle-short-version-string "1.0" \
-            -t ios \
-            --wait \
-            --verbose 2>&1 | tee -a /tmp/upload.log
+            -t ios --verbose 2>&1 | tee -a /tmp/upload.log
           ALTOOL_EXIT=${PIPESTATUS[0]}
           echo "altool exit code: $ALTOOL_EXIT" | tee -a /tmp/upload.log
-          test $ALTOOL_EXIT -eq 0 || exit $ALTOOL_EXIT
+
+          if [ $ALTOOL_EXIT -ne 0 ]; then
+            echo "altool upload failed, trying with apple-id..." | tee -a /tmp/upload.log
+            xcrun altool --upload-app \
+              -f "$IPA" \
+              --apiKey "$API_KEY_ID" \
+              --apiIssuer "$API_ISSUER_ID" \
+              --apple-id "oscarquiroga@smartmode.fun" \
+              --bundle-id "com.sevenapp.app" \
+              --bundle-version "1" \
+              --bundle-short-version-string "1.0" \
+              -t ios --verbose 2>&1 | tee -a /tmp/upload.log
+            ALTOOL_EXIT=${PIPESTATUS[0]}
+            echo "altool (with metadata) exit code: $ALTOOL_EXIT" | tee -a /tmp/upload.log
+          fi
+
+          if [ $ALTOOL_EXIT -ne 0 ]; then
+            echo "altool failed definitively, trying fastlane pilot..." | tee -a /tmp/upload.log
+            gem install fastlane -n /usr/local/bin --no-document 2>&1 | tee -a /tmp/upload.log
+            APP_STORE_CONNECT_API_KEY_KEY_ID="$API_KEY_ID" \
+            APP_STORE_CONNECT_API_KEY_ISSUER_ID="$API_ISSUER_ID" \
+            APP_STORE_CONNECT_API_KEY_KEY_FILEPATH="$HOME/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8" \
+            fastlane pilot upload "$IPA" \
+              --apple_id "oscarquiroga@smartmode.fun" \
+              --team_id "4J94Y6J3DD" \
+              --skip_waiting_for_build_processing true 2>&1 | tee -a /tmp/upload.log
+          fi
 
       - name: Upload IPA as artifact
         if: always()
