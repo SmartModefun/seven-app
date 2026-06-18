@@ -121,19 +121,7 @@ jobs:
       - name: Patch pbxproj signing identity
         run: |
           cd ios/App
-          python3 << 'PYEOF'
-import os
-ident = os.environ.get('SIGNING_IDENTITY', '')
-path = 'App.xcodeproj/project.pbxproj'
-with open(path, 'r') as f:
-    content = f.read()
-old = 'CODE_SIGN_STYLE = Manual;'
-new = 'CODE_SIGN_STYLE = Manual;\n\t\t\t\tCODE_SIGN_IDENTITY = "' + ident + '";'
-content = content.replace(old, new)
-with open(path, 'w') as f:
-    f.write(content)
-print('Patched CODE_SIGN_IDENTITY to: ' + ident)
-PYEOF
+          python3 -c "import os; i=os.environ.get('SIGNING_IDENTITY',''); p='App.xcodeproj/project.pbxproj'; c=open(p).read(); o='CODE_SIGN_STYLE = Manual;'; n='CODE_SIGN_STYLE = Manual;\n\t\t\t\tCODE_SIGN_IDENTITY = \"'+i+'\";'; open(p,'w').write(c.replace(o,n)); print('OK: '+i)"
 
       - name: Build iOS Archive
         run: |
