@@ -121,19 +121,19 @@ jobs:
       - name: Patch pbxproj signing identity
         run: |
           cd ios/App
-          python3 -c "
+          python3 << 'PYEOF'
 import os
 ident = os.environ.get('SIGNING_IDENTITY', '')
 path = 'App.xcodeproj/project.pbxproj'
 with open(path, 'r') as f:
     content = f.read()
 old = 'CODE_SIGN_STYLE = Manual;'
-new = 'CODE_SIGN_STYLE = Manual;\n\t\t\t\tCODE_SIGN_IDENTITY = \"' + ident + '\";'
+new = 'CODE_SIGN_STYLE = Manual;\n\t\t\t\tCODE_SIGN_IDENTITY = "' + ident + '";'
 content = content.replace(old, new)
 with open(path, 'w') as f:
     f.write(content)
 print('Patched CODE_SIGN_IDENTITY to: ' + ident)
-"
+PYEOF
 
       - name: Build iOS Archive
         run: |
