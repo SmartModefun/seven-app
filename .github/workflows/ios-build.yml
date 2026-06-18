@@ -191,42 +191,48 @@ jobs:
             exit $VALIDATE_EXIT
           fi
 
-          # Upload
-          echo "=== UPLOAD ===" | tee -a /tmp/upload.log
-          xcrun altool --upload-app \
-            -f "$IPA" \
+          # Try multiple upload methods. altool returns 0 but doesn't actually
+          # upload on Xcode 16 runners (known issue). Always try fastlane too.
+          UPLOAD_OK=false
+
+          # Method 1: altool --upload-package (modern)
+          echo "=== METHOD 1: altool --upload-package ===" | tee -a /tmp/upload.log
+          xcrun altool --upload-package "$IPA" \
             --apiKey "$API_KEY_ID" \
             --apiIssuer "$API_ISSUER_ID" \
-            -t ios --verbose 2>&1 | tee -a /tmp/upload.log
-          ALTOOL_EXIT=${PIPESTATUS[0]}
-          echo "altool exit code: $ALTOOL_EXIT" | tee -a /tmp/upload.log
+            --type ios \
+            --apple-id "6781380503" \
+            --bundle-id "com.sevenapp.app" \
+            --bundle-version "1" \
+            --bundle-short-version-string "1.0" \
+            --output-format json \
+            --verbose 2>&1 | tee -a /tmp/upload.log && UPLOAD_OK=true
 
-          if [ $ALTOOL_EXIT -ne 0 ]; then
-            echo "altool upload failed, trying with apple-id..." | tee -a /tmp/upload.log
-            xcrun altool --upload-app \
-              -f "$IPA" \
-              --apiKey "$API_KEY_ID" \
-              --apiIssuer "$API_ISSUER_ID" \
-              --apple-id "oscarquiroga@smartmode.fun" \
-              --bundle-id "com.sevenapp.app" \
-              --bundle-version "1" \
-              --bundle-short-version-string "1.0" \
-              -t ios --verbose 2>&1 | tee -a /tmp/upload.log
-            ALTOOL_EXIT=${PIPESTATUS[0]}
-            echo "altool (with metadata) exit code: $ALTOOL_EXIT" | tee -a /tmp/upload.log
+          # Method 2: iTMSTransporter
+          if [ "$UPLOAD_OK" != "true" ]; then
+            echo "=== METHOD 2: iTMSTransporter ===" | tee -a /tmp/upload.log
+            xcrun iTMSTransporter -m upload \
+              -assetFile "$IPA" \
+              -apiKey "$API_KEY_ID" \
+              -apiIssuer "$API_ISSUER_ID" \
+              -v eXtreme 2>&1 | tee -a /tmp/upload.log && UPLOAD_OK=true
           fi
 
-          if [ $ALTOOL_EXIT -ne 0 ]; then
-            echo "altool failed definitively, trying fastlane pilot..." | tee -a /tmp/upload.log
-            gem install fastlane -n /usr/local/bin --no-document 2>&1 | tee -a /tmp/upload.log
-            APP_STORE_CONNECT_API_KEY_KEY_ID="$API_KEY_ID" \
-            APP_STORE_CONNECT_API_KEY_ISSUER_ID="$API_ISSUER_ID" \
-            APP_STORE_CONNECT_API_KEY_KEY_FILEPATH="$HOME/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8" \
+          # Method 3: fastlane pilot (always tries, since altool may lie)
+          echo "=== METHOD 3: fastlane pilot ===" | tee -a /tmp/upload.log
+          if command -v fastlane &>/dev/null || gem install fastlane -n /usr/local/bin --no-document 2>&1; then
             fastlane pilot upload "$IPA" \
-              --apple_id "oscarquiroga@smartmode.fun" \
-              --team_id "4J94Y6J3DD" \
-              --skip_waiting_for_build_processing true 2>&1 | tee -a /tmp/upload.log
+              --api_key_path "$HOME/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8" \
+              --api_key_id "$API_KEY_ID" \
+              --api_issuer "$API_ISSUER_ID" \
+              --skip_waiting_for_build_processing true 2>&1 | tee -a /tmp/upload.log && UPLOAD_OK=true
           fi
+
+          if [ "$UPLOAD_OK" != "true" ]; then
+            echo "ALL UPLOAD METHODS FAILED" | tee -a /tmp/upload.log
+            exit 1
+          fi
+          echo "At least one upload method succeeded" | tee -a /tmp/upload.log
 
       - name: Upload IPA as artifact
         if: always()
