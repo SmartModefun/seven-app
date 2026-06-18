@@ -178,7 +178,8 @@ jobs:
             -f "$IPA" \
             --apiKey "$API_KEY_ID" \
             --apiIssuer "$API_ISSUER_ID" \
-            --type ios
+            --type ios \
+            --verbose
 
       - name: Upload IPA as artifact
         if: always()
