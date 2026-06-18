@@ -169,17 +169,21 @@ jobs:
           API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
           API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
           API_KEY_B64: ${{ secrets.APP_STORE_CONNECT_API_KEY_B64 }}
+          ASC_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
         run: |
           mkdir -p ~/.appstoreconnect/private_keys
           echo "$API_KEY_B64" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8
+          ls -la build/
           IPA=$(ls build/*.ipa 2>/dev/null | head -1)
-          if [ -z "$IPA" ]; then exit 1; fi
+          if [ -z "$IPA" ]; then echo "No IPA found"; ls -laR build/ 2>/dev/null || true; exit 1; fi
+          echo "Uploading: $IPA ($(stat -f%z "$IPA") bytes)"
           xcrun altool --upload-app \
             -f "$IPA" \
             --apiKey "$API_KEY_ID" \
             --apiIssuer "$API_ISSUER_ID" \
             --type ios \
-            --verbose
+            --output-format json 2>&1
+          echo "altool exit code: $?"
 
       - name: Upload IPA as artifact
         if: always()
