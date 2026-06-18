@@ -41,11 +41,9 @@ jobs:
       - name: Sync Capacitor iOS
         run: npx cap sync ios
 
-      - name: Configure Xcode project for automatic signing
+      - name: Configure Xcode project
         run: |
           cd ios/App
-          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier ${{ env.BUNDLE_ID }}" "App/Info.plist" 2>/dev/null || true
-          sed -i '' 's/PROVISIONING_PROFILE_SPECIFIER = "";/PROVISIONING_PROFILE_SPECIFIER = "";/g' App.xcodeproj/project.pbxproj 2>/dev/null || true
           /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "App/Info.plist" 2>/dev/null || \
             /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" "App/Info.plist"
 
@@ -85,30 +83,35 @@ jobs:
         env:
           CERT_BASE64: ${{ secrets.IOS_CERT_BASE64 }}
           P12_PASSWORD: test1234
+          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.IOS_BUILD_PROVISION_PROFILE_BASE64 }}
           KEYCHAIN_PASSWORD: test1234
         run: |
           security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
           security default-keychain -s build.keychain
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
           security set-keychain-settings -t 3600 -l ~/Library/Keychains/build.keychain
+
           echo "$CERT_BASE64" | base64 -d > cert.p12
           security import cert.p12 -k build.keychain -P "$P12_PASSWORD" -T /usr/bin/codesign
           rm cert.p12
+
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
 
-      - name: Setup App Store Connect API Key
-        env:
-          API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
-          API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID }}
-          API_KEY_B64: ${{ secrets.APP_STORE_CONNECT_API_KEY_B64 }}
-        run: |
-          mkdir -p ~/.appstoreconnect/private_keys
-          echo "$API_KEY_B64" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8
-          mkdir -p ~/.config
-          cat > ~/.config/xcode.env << XOF
-          export APP_STORE_CONNECT_API_KEY_ID=$API_KEY_ID
-          export APP_STORE_CONNECT_API_ISSUER_ID=$API_ISSUER_ID
-          XOF
+          IDENTITY=$(security find-identity -v -p codesigning 2>/dev/null | \
+            grep "Apple Distribution" | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "IDENTITY=$IDENTITY"
+
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "$BUILD_PROVISION_PROFILE_BASE64" | base64 -d > profile.mobileprovision
+          PROFILE_DATA=$(security cms -D -i profile.mobileprovision 2>/dev/null)
+          UUID=$(echo "$PROFILE_DATA" | awk -F'[<>]' '/<key>UUID<\/key>/ {getline; print $3}')
+          SPECIFIER=$(echo "$PROFILE_DATA" | awk -F'[<>]' '/<key>Name<\/key>/ {getline; print $3}')
+          cp profile.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/$UUID.mobileprovision
+          rm profile.mobileprovision
+
+          echo "SIGNING_IDENTITY=$IDENTITY" >> $GITHUB_ENV
+          echo "PROFILE_SPECIFIER=$SPECIFIER" >> $GITHUB_ENV
+          echo "PROFILE_UUID=$UUID" >> $GITHUB_ENV
 
       - name: Install Pods
         run: |
@@ -125,7 +128,6 @@ jobs:
             -scheme "$SCHEME_NAME" \
             -configuration Release \
             -archivePath ../../build/App.xcarchive \
-            -allowProvisioningUpdates \
             DEVELOPMENT_TEAM="${{ secrets.IOS_TEAM_ID }}"
 
       - name: Export IPA
@@ -140,7 +142,12 @@ jobs:
               <key>teamID</key>
               <string>${{ secrets.IOS_TEAM_ID }}</string>
               <key>signingStyle</key>
-              <string>automatic</string>
+              <string>manual</string>
+              <key>provisioningProfiles</key>
+              <dict>
+                  <key>${{ env.BUNDLE_ID }}</key>
+                  <string>$PROFILE_SPECIFIER</string>
+              </dict>
               <key>uploadSymbols</key>
               <true/>
           </dict>
@@ -149,8 +156,7 @@ jobs:
           xcodebuild -exportArchive \
             -archivePath build/App.xcarchive \
             -exportPath build/ \
-            -exportOptionsPlist exportOptions.plist \
-            -allowProvisioningUpdates
+            -exportOptionsPlist exportOptions.plist
 
       - name: Upload IPA to App Store Connect
         env:
