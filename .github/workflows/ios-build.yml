@@ -118,6 +118,23 @@ jobs:
           cd ios/App
           pod install --repo-update
 
+      - name: Patch pbxproj signing identity
+        run: |
+          cd ios/App
+          python3 -c "
+import os
+ident = os.environ.get('SIGNING_IDENTITY', '')
+path = 'App.xcodeproj/project.pbxproj'
+with open(path, 'r') as f:
+    content = f.read()
+old = 'CODE_SIGN_STYLE = Manual;'
+new = 'CODE_SIGN_STYLE = Manual;\n\t\t\t\tCODE_SIGN_IDENTITY = \"' + ident + '\";'
+content = content.replace(old, new)
+with open(path, 'w') as f:
+    f.write(content)
+print('Patched CODE_SIGN_IDENTITY to: ' + ident)
+"
+
       - name: Build iOS Archive
         run: |
           cd ios/App
@@ -128,7 +145,8 @@ jobs:
             -scheme "$SCHEME_NAME" \
             -configuration Release \
             -archivePath ../../build/App.xcarchive \
-            DEVELOPMENT_TEAM="${{ secrets.IOS_TEAM_ID }}"
+            DEVELOPMENT_TEAM="${{ secrets.IOS_TEAM_ID }}" \
+            CODE_SIGN_IDENTITY="$SIGNING_IDENTITY"
 
       - name: Export IPA
         run: |
