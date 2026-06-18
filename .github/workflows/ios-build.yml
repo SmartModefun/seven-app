@@ -79,6 +79,24 @@ jobs:
           }
           EOF
 
+      - name: Strip alpha from app icons (App Store rejects transparent icons)
+        run: |
+          python3 -m pip install Pillow -q 2>/dev/null || true
+          python3 -c "
+import os
+from PIL import Image
+d='ios/App/App/Assets.xcassets/AppIcon.appiconset'
+for f in os.listdir(d):
+    if not f.endswith('.png'): continue
+    p=os.path.join(d,f)
+    i=Image.open(p).convert('RGBA')
+    if any(v[3]<255 for v in i.getdata()):
+        b=Image.new('RGBA',i.size,(255,255,255,255))
+        b.paste(i,(0,0),i);b.convert('RGB').save(p,'PNG')
+        print(f'fixed: {f}')
+print('done')
+"
+
       - name: Setup Code Signing
         env:
           CERT_BASE64: ${{ secrets.IOS_CERT_BASE64 }}
