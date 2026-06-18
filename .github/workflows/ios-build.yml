@@ -176,27 +176,16 @@ jobs:
           IPA=$(ls build/*.ipa 2>/dev/null | head -1)
           if [ -z "$IPA" ]; then echo "No IPA found"; exit 1; fi
           echo "Uploading: $IPA ($(stat -f%z "$IPA") bytes)"
-          # Try altool first, fallback to fastlane
+          echo "Upload log:" > /tmp/upload.log
           xcrun altool --upload-app \
             -f "$IPA" \
             --apiKey "$API_KEY_ID" \
             --apiIssuer "$API_ISSUER_ID" \
             --type ios \
-            --output-format json 2>&1 || {
-            echo "altool failed, trying fastlane..."
-            mkdir -p fastlane
-            cat > fastlane/Appfile << 'FASTFILE'
-            app_identifier "com.sevenapp.app"
-            apple_id "oscarquiroga@smartmode.fun"
-            team_id "4J94Y6J3DD"
-FASTFILE
-            fastlane run pilot_upload \
-              ipa:"$IPA" \
-              api_key_path:"$HOME/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8" \
-              api_key_id:"$API_KEY_ID" \
-              api_issuer:"$API_ISSUER_ID" \
-              skip_waiting_for_build_processing:true
-          }
+            --output-format json --verbose 2>&1 | tee -a /tmp/upload.log
+          ALTOOL_EXIT=${PIPESTATUS[0]}
+          echo "altool exit code: $ALTOOL_EXIT" | tee -a /tmp/upload.log
+          test $ALTOOL_EXIT -eq 0 || exit $ALTOOL_EXIT
 
       - name: Upload IPA as artifact
         if: always()
@@ -204,4 +193,12 @@ FASTFILE
         with:
           name: SevenApp.ipa
           path: build/App.ipa
+          if-no-files-found: warn
+
+      - name: Upload altool log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: altool-upload.log
+          path: /tmp/upload.log
           if-no-files-found: warn
