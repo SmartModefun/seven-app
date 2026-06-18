@@ -194,8 +194,10 @@ jobs:
           python3 -c "import json; k=open('$HOME/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8').read(); json.dump({'key_id':'$API_KEY_ID','issuer_id':'$API_ISSUER_ID','key':k,'is_key_content':True,'in_house':False}, open('fastlane/api_key.json','w'))"
 
           # Upload via fastlane pilot
-          fastlane pilot upload "$IPA" \
-            --api_key_path fastlane/api_key.json
+          fastlane pilot upload \
+            --ipa "$IPA" \
+            --api_key_path fastlane/api_key.json \
+            --skip_waiting_for_build_processing true
 
       - name: Upload IPA as artifact
         if: always()
