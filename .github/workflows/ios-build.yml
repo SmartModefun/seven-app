@@ -171,8 +171,7 @@ jobs:
           API_KEY_B64: ${{ secrets.APP_STORE_CONNECT_API_KEY_B64 }}
           ASC_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
         run: |
-          LOG=/tmp/upload.log
-          exec 2>>"$LOG"
+          exec 2>/tmp/upload.log
           set -e
           set -x
           mkdir -p ~/.appstoreconnect/private_keys
@@ -182,15 +181,17 @@ jobs:
           if [ -z "$IPA" ]; then echo "No IPA found"; exit 1; fi
           echo "Uploading: $IPA ($(stat -f%z "$IPA") bytes)"
 
-          # Install fastlane with brew (faster on macOS runners)
-          brew install fastlane
+          # Install fastlane (ignore brew install failure with || true)
+          command -v fastlane && echo "fastlane ready" || {
+            brew install fastlane 2>&1 || true
+          }
+          command -v fastlane || { echo "FAILED: fastlane not available"; exit 1; }
 
           # Create JSON API key file for fastlane
           mkdir -p fastlane
           echo "app_identifier 'com.sevenapp.app'" > fastlane/Appfile
           echo "team_id '4J94Y6J3DD'" >> fastlane/Appfile
-          echo "$(cat ~/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8)" > /tmp/p8_content.txt
-          jq -n --arg kid "$API_KEY_ID" --arg iid "$API_ISSUER_ID" --arg key "$(cat /tmp/p8_content.txt)" '{"key_id":$kid,"issuer_id":$iid,"key":$key,"is_key_content":true,"in_house":false}' > fastlane/api_key.json
+          python3 -c "import json; k=open('$HOME/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8').read(); json.dump({'key_id':'$API_KEY_ID','issuer_id':'$API_ISSUER_ID','key':k,'is_key_content':True,'in_house':False}, open('fastlane/api_key.json','w'))"
 
           # Upload via fastlane pilot
           fastlane pilot upload "$IPA" \
@@ -204,10 +205,10 @@ jobs:
           path: build/App.ipa
           if-no-files-found: warn
 
-      - name: Upload fastlane log
+      - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fastlane-upload.log
-          path: ~/.fastlane/fastlane.log
+          name: build-upload.log
+          path: /tmp/upload.log
           if-no-files-found: warn
