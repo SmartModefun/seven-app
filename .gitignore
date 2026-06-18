@@ -90,3 +90,9 @@ functions/serviceAccountKey.json
 # Icon generators (scripts, not for distribution)
 generate_icon.py
 generate_icons_all.py
+
+# Node.js installer
+*.msi
+
+# AGENTS file (project context, not for distribution)
+AGENTS.md
