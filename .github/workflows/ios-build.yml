@@ -207,15 +207,8 @@ jobs:
           echo "app_identifier 'com.sevenapp.app'" > fastlane/Appfile
           echo "apple_id 'oscarquiroga@smartmode.fun'" >> fastlane/Appfile
           echo "team_id '4J94Y6J3DD'" >> fastlane/Appfile
-          # Create JSON API key file for fastlane (read p8 into JSON)
-          python3 -c "
-import json, os
-kid = os.environ['API_KEY_ID']
-iid = os.environ['API_ISSUER_ID']
-p8 = open(os.path.expanduser('~/.appstoreconnect/private_keys/AuthKey_'+kid+'.p8')).read()
-json.dump({'key_id': kid, 'issuer_id': iid, 'key': p8, 'is_key_content': True, 'in_house': False},
-          open('fastlane/api_key.json', 'w'), indent=2)
-"
+          # Create JSON API key file for fastlane
+          jq -n --arg kid "$API_KEY_ID" --arg iid "$API_ISSUER_ID" --arg key "$(cat $HOME/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8)" '{"key_id":$kid,"issuer_id":$iid,"key":$key,"is_key_content":true,"in_house":false}' > fastlane/api_key.json
           gem install fastlane -n /usr/local/bin --no-document 2>&1 | tee -a /tmp/upload.log
           fastlane pilot upload "$IPA" \
             --api_key_path fastlane/api_key.json \
