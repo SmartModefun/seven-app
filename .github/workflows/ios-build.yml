@@ -128,7 +128,9 @@ jobs:
             -scheme "$SCHEME_NAME" \
             -configuration Release \
             -archivePath ../../build/App.xcarchive \
-            DEVELOPMENT_TEAM="${{ secrets.IOS_TEAM_ID }}"
+            DEVELOPMENT_TEAM="${{ secrets.IOS_TEAM_ID }}" \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_SPECIFIER" \
+            PROVISIONING_STYLE="Manual"
 
       - name: Export IPA
         run: |
