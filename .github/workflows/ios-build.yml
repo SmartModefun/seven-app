@@ -173,17 +173,30 @@ jobs:
         run: |
           mkdir -p ~/.appstoreconnect/private_keys
           echo "$API_KEY_B64" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8
-          ls -la build/
           IPA=$(ls build/*.ipa 2>/dev/null | head -1)
-          if [ -z "$IPA" ]; then echo "No IPA found"; ls -laR build/ 2>/dev/null || true; exit 1; fi
+          if [ -z "$IPA" ]; then echo "No IPA found"; exit 1; fi
           echo "Uploading: $IPA ($(stat -f%z "$IPA") bytes)"
+          # Try altool first, fallback to fastlane
           xcrun altool --upload-app \
             -f "$IPA" \
             --apiKey "$API_KEY_ID" \
             --apiIssuer "$API_ISSUER_ID" \
             --type ios \
-            --output-format json 2>&1
-          echo "altool exit code: $?"
+            --output-format json 2>&1 || {
+            echo "altool failed, trying fastlane..."
+            mkdir -p fastlane
+            cat > fastlane/Appfile << 'FASTFILE'
+            app_identifier "com.sevenapp.app"
+            apple_id "oscarquiroga@smartmode.fun"
+            team_id "4J94Y6J3DD"
+FASTFILE
+            fastlane run pilot_upload \
+              ipa:"$IPA" \
+              api_key_path:"$HOME/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8" \
+              api_key_id:"$API_KEY_ID" \
+              api_issuer:"$API_ISSUER_ID" \
+              skip_waiting_for_build_processing:true
+          }
 
       - name: Upload IPA as artifact
         if: always()
