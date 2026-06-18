@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seven App - MK Día 2: Embudo de Ventas</title>
+    <link rel="icon" href="assets/favicon.png">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --accent-primary: #6366f1;
+            --accent-secondary: #818cf8;
+            --accent-cyan: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border: #2a2a3a;
+        }
+        body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); margin: 0; padding: 0; padding-top: 80px; line-height: 1.6; position: relative; }
+        body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 20% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 70%); pointer-events: none; z-index: -1; }
+        h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; }
+        .header-bar { position: fixed; top: 0; left: 0; right: 0; background: rgba(18, 18, 26, 0.95); backdrop-filter: blur(20px); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); z-index: 100; }
+        .header-bar img { height: 35px; cursor: pointer; transition: transform 0.3s ease; }
+        .header-bar img:hover { transform: scale(1.1); }
+        .theme-toggle, .home-btn { background: var(--bg-tertiary); color: white; border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; cursor: pointer; text-decoration: none; font-size: 14px; transition: all 0.3s ease; }
+        .theme-toggle:hover, .home-btn:hover { background: var(--accent-primary); border-color: var(--accent-primary); }
+        .container { max-width: 720px; margin: 0 auto; padding: 20px; }
+        .day-title { text-align: center; margin-bottom: 40px; padding: 40px 20px; background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%); border-radius: 20px; margin-top: 20px; }
+        .day-title h1 { background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0 0 12px 0; font-size: 32px; }
+        .day-title p { color: var(--text-secondary); margin: 0; font-size: 18px; }
+        .progress-bar { background: var(--bg-tertiary); height: 8px; border-radius: 4px; margin: 25px 0; overflow: hidden; border: 1px solid var(--border); }
+        .progress-fill { background: linear-gradient(90deg, var(--accent-primary), var(--accent-cyan)); height: 100%; width: 0%; transition: width 0.4s ease; border-radius: 4px; }
+        .lesson-count { text-align: center; color: var(--text-muted); font-size: 14px; margin: 15px 0; }
+        .lesson-count span { color: var(--accent-primary); font-weight: 600; }
+        .lesson-card { background: var(--bg-secondary); border-radius: 20px; padding: 35px; margin: 25px 0; border: 1px solid var(--border); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2); transition: all 0.3s ease; }
+        .lesson-card:hover { border-color: var(--accent-primary); box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15); }
+        .lesson-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; color: var(--accent-cyan); display: flex; align-items: center; gap: 12px; }
+        .lesson-title::before { content: ''; width: 4px; height: 28px; background: linear-gradient(180deg, var(--accent-primary), var(--accent-cyan)); border-radius: 2px; }
+        .lesson-text { font-size: 16px; line-height: 1.85; color: var(--text-secondary); margin-bottom: 20px; }
+        .lesson-text strong { color: var(--success); font-weight: 600; }
+        .lesson-example { background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.05)); border-left: 4px solid var(--accent-primary); padding: 24px; margin: 25px 0; border-radius: 0 16px 16px 0; position: relative; overflow: hidden; }
+        .lesson-example::before { content: '💡'; position: absolute; top: 12px; right: 16px; font-size: 24px; opacity: 0.3; }
+        .lesson-example-title { color: var(--accent-primary); font-weight: 700; margin-bottom: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .lesson-example p { margin: 0; color: var(--text-primary); font-size: 15px; line-height: 1.75; }
+        .lesson-warning { background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.05)); border-left: 4px solid var(--warning); padding: 24px; margin: 25px 0; border-radius: 0 16px 16px 0; position: relative; overflow: hidden; }
+        .lesson-warning::before { content: '⚠️'; position: absolute; top: 12px; right: 16px; font-size: 24px; opacity: 0.3; }
+        .lesson-warning-title { color: var(--warning); font-weight: 700; margin-bottom: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .lesson-warning p { margin: 0; color: #fcd34d; font-size: 15px; line-height: 1.75; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 40px; gap: 15px; }
+        .nav-btn { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); padding: 14px 28px; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: 500; text-decoration: none; transition: all 0.3s ease; flex: 1; text-align: center; }
+        .nav-btn:hover { background: var(--bg-secondary); border-color: var(--accent-primary); }
+        .nav-btn.next { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); border: none; color: white; }
+        .nav-btn.next:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4); }
+        .footer { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 14px; border-top: 1px solid var(--border); margin-top: 60px; }
+        .paywall-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(10,10,15,0.95); z-index:1000; display:flex; align-items:center; justify-content:center; }
+        .paywall-box { background:var(--bg-secondary); border:1px solid var(--border); border-radius:20px; padding:40px; text-align:center; max-width:400px; margin:20px; }
+        .paywall-box .icon { font-size:64px; margin-bottom:16px; }
+        .paywall-box h2 { color:var(--accent-primary); margin-bottom:12px; }
+        .paywall-box p { color:var(--text-secondary); margin-bottom:24px; }
+        .paywall-box .btn-unlock { display:inline-block; background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary)); color:white; padding:14px 32px; border-radius:10px; text-decoration:none; font-weight:600; }
+        .paywall-box .back-link { display:block; margin-top:16px; color:var(--text-muted); text-decoration:none; }
+        body.light-mode { --bg-primary: #f8fafc; --bg-secondary: #ffffff; --bg-tertiary: #f1f5f9; --text-primary: #0f172a; --text-secondary: #475569; --text-muted: #94a3b8; --border: #e2e8f0; }
+        body.light-mode .lesson-card { box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08); }
+        @media (max-width: 600px) { .container { padding: 15px; } .lesson-card { padding: 25px 20px; border-radius: 16px; } .day-title h1 { font-size: 26px; } .nav-buttons { flex-direction: column; } .nav-btn { width: 100%; } }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <img src="assets/logo.png" onclick="window.location.href='index.html'" alt="Seven App">
+        <div style="display: flex; gap: 10px;">
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            <a href="marketing-digital.html" class="home-btn">← Volver</a>
+            <a href="index.html" class="home-btn">🏠 Inicio</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="day-title">
+            <h1>El Embudo de Ventas</h1>
+            <p>Cómo mover personas de desconocerte a comprarte</p>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+        <div class="lesson-count">Lección <span id="count">1</span> de <span id="total">4</span></div>
+
+        <div class="lesson-card" id="lesson1">
+            <div class="lesson-title">El modelo AIDA: Atención, Interés, Deseo, Acción</div>
+            <div class="lesson-text">
+                AIDA es el modelo más antiguo y probado de marketing. Describe el viaje mental que atraviesa un prospecto desde que te descubre hasta que compra. Entender este modelo es fundamental porque te permite crear contenido y mensajes appropriate para cada etapa.
+            </div>
+            <div class="lesson-text">
+                <strong>A - Atención (Awareness):</strong><br>
+                La persona descubre que existes. No te conoce, no sabe que tienes la solución a su problema. Tu objetivo aquí es CAPTAR ATENCIÓN y presentar tu marca. Formatos: ads de awareness, contenido viral, SEO, redes sociales.<br><br>
+                <strong>I - Interés (Interest):</strong><br>
+                La persona sabe que existes y quiere saber más. Investigará, leerá tu contenido, te seguirá en redes. Tu objetivo es MANTENER EL INTERÉS con contenido valioso. Formatos: blog posts, emails educativos, webinars gratuitos.<br><br>
+                <strong>D - Deseo (Desire):</strong><br>
+                La persona considera tu solución como una opción real. Evalúa alternativas, compara precios, busca reviews. Tu objetivo es INCREMENTAR EL DESEO mostrando beneficios específicos y prueba social. Formatos: case studies, testimonios, demos, comparativas.<br><br>
+                <strong>A - Acción (Action):</strong><br>
+                La persona toma la decisión de comprar. Tu objetivo es FACILITAR LA COMPRA eliminando fricción. Formatos: landing pages optimizadas, ofertas por tiempo limitado, checkout simplificado.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p><strong>A:</strong> Persona ve tu ad de "5 tips para vender más" en Instagram.<br>
+                <strong>I:</strong> Hace clic, llega a tu blog, lee los 5 tips, se suscribe a tu newsletter.<br>
+                <strong>D:</strong> Recibe emails con más tips, ve case study de alguien que ganó $10k con tu método, mira tu webinar gratis.<br>
+                <strong>A:</strong> Ve una oferta de tu curso, tiene duda, te escribe, respondes, compra.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Vender muy temprano. Si alguien apenas te descubre y ya le estás pidiendo que compre, va a huir. Cada etapa tiene su mensaje apropiado. Primero da valor, luego pide la venta.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson2">
+            <div class="lesson-title">TOFU, MOFU, BOFU: El embudo por niveles</div>
+            <div class="lesson-text">
+                Otra forma de pensar el embudo es por niveles de profundidad. TOFU, MOFU, y BOFU se refieren a dónde está la persona en relación con tu contenido y qué tipo de contenido necesita.
+            </div>
+            <div class="lesson-text">
+                <strong>TOFU - Top of Funnel (Arriba del embudo):</strong><br>
+                La persona está en modo de descubrimiento. Busca información general, no está lista para comprar. Quiere aprender, no que le vendan.<br><br>
+                Contenido apropiado: Posts educativos en redes, videos de YouTube, guías introductorias, podcasts, contenido viral.<br><br>
+                Objetivo: Generar awareness y capturar emails.<br><br>
+                <strong>MOFU - Middle of Funnel (En medio del embudo):</strong><br>
+                La persona ya sabe que tiene un problema y está evaluando soluciones. Busca comparativas, reviews, y validación.<br><br>
+                Contenido apropiado: Webinars, ebooks especializados, comparativas detalladas, calculators, checklists descargables.<br><br>
+                Objetivo: Nutrir leads y construir confianza.<br><br>
+                <strong>BOFU - Bottom of Funnel (Abajo del embudo):</strong><br>
+                La persona está lista para comprar. Solo necesita el empujoncito final y resolver las últimas objeciones.<br><br>
+                Contenido apropiado: Demos personalizadas, consultas gratuitas, case studies detallados, ofertas por tiempo limitado, FAQ sobre objections.<br><br>
+                Objetivo: Cerrar la venta.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p>Para un CRM software:<br><br>
+                <strong>TOFU:</strong> "Por qué necesitas un CRM en 2024" (blog post)<br>
+                <strong>MOFU:</strong> "Comparativa: Los 7 mejores CRMs del mercado" (guía descargable)<br>
+                <strong>BOFU:</strong> "Demo personalizada de 30 minutos" + "Prueba gratis 14 días"</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Crear contenido solo para BOFU (personas listas para comprar) e ignorar TOFU y MOFU. Sin contenido de entrada al embudo, eventualmente se te acaban los leads calificados. Necesitas sembrar antes de cosechar.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson3">
+            <div class="lesson-title">Tu primera pregunta: ¿Qué es un lead magnet?</div>
+            <div class="lesson-text">
+                Un lead magnet es un recurso de valor que ofreces GRATIS a cambio del email de un prospecto. Es la pieza central de cualquier estrategia de captación porque convierte visitantes anónimos en leads que puedes nurture y eventualmente convertir en clientes.
+            </div>
+            <div class="lesson-text">
+                <strong>Por qué funcionan los lead magnets:</strong><br><br>
+                - La gente no te da su email por bondad. Necesitas ofrecer ALGO de valor a cambio.<br>
+                - Un lead magnet de calidad atrae personas genuinamente interesadas en lo que ofreces.<br>
+                - Una vez que tienes el email, puedes continuar la conversación por email (donde tienes control total).
+            </div>
+            <div class="lesson-text">
+                <strong>Tipos de lead magnets que funcionan:</strong><br><br>
+                <strong>1. Guías/Ebooks:</strong> "Guía completa de..." PDF de 20-50 páginas con información práctica.<br>
+                <strong>2. Checklists:</strong> "Checklist de 10 pasos para..." Documento corto y actionable.<br>
+                <strong>3. Plantillas:</strong> "Plantilla de calendario editorial", "Template de estrategia".<br>
+                <strong>4. Webinars:</strong> Clase en vivo o grabada sobre un tema específico.<br>
+                <strong>5. Trials/Freemium:</strong> Acceso limitado a tu producto o servicio.<br>
+                <strong>6. Calculators:</strong> Herramienta interactiva que da un resultado personalizado.<br>
+                <strong>7. Cursos cortos:</strong> Serie de videos rápidos sobre un tema.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p>Para un coach de negocios:<br>
+                <strong>Lead magnet:</strong> "Planilla de 90 días para escalar tu negocio"<br>
+                <strong>Landing page:</strong> Explica el problema (no sabes qué hacer), muestra preview del recurso, formulario simple (nombre + email).<br>
+                <strong>Email de bienvenida:</strong> "Gracias por descargar. Aquí está tu planilla. Mientras tanto, te invito a mi masterclass gratuita del próximo jueves."<br>
+                <strong>Resultado:</strong> 500+ emails capturados en un mes.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Crear lead magnets genéricos como "Suscríbete a mi newsletter" o contenido mediocre. La gente necesita una RAZÓN para darte su email. Si el lead magnet no es específico y valioso, no funcionará. Invierte tiempo en crear algo que genuinamente ayude.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson4">
+            <div class="lesson-title">Métricas críticas del embudo: CAC, LTV, ROI</div>
+            <div class="lesson-text">
+                No puedes mejorar lo que no mides. Estas tres métricas son las más importantes para evaluar la salud de tu embudo de ventas y negocio.
+            </div>
+            <div class="lesson-text">
+                <strong>CAC - Customer Acquisition Cost (Costo de Adquisición):</strong><br>
+                Cuánto te cuesta conseguir UN cliente nuevo.<br>
+                Fórmula: (Gasto en marketing + Gasto en ventas) / Clientes nuevos<br>
+                Ejemplo: Gastaste $1,000 en ads y conseguiste 20 clientes = CAC de $50<br><br>
+                <strong>LTV - Lifetime Value (Valor de por vida):</strong><br>
+                Cuánto dinero genera UN cliente durante toda su relación contigo.<br>
+                Fórmula: Valor promedio de compra x Número de compras x Tiempo como cliente<br>
+                Ejemplo: Cliente gasta $100/cada 3 meses, stays 2 años = LTV de $800<br><br>
+                <strong>ROI - Return on Investment:</strong><br>
+                Cuánto ganaste vs cuánto invertiste.<br>
+                Fórmula: (Ganancia - Inversión) / Inversión x 100<br>
+                Ejemplo: Invertiste $1,000, ganaste $3,000 = ROI de 200%
+            </div>
+            <div class="lesson-text">
+                <strong>La regla fundamental:</strong><br>
+                Tu LTV debe ser al menos 3X tu CAC. Si consigues clientes a $50, necesitas que cada cliente te genere al menos $150 en valor. Si tu LTV es menor, estás perdiendo dinero a largo plazo aunque parezca que vendes.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p><strong>Situación:</strong> CAC = $100, LTV = $150<br>
+                <strong>Resultado:</strong> Por cada cliente ganas $50. Es sostenible.<br><br>
+                <strong>Situación:</strong> CAC = $200, LTV = $150<br>
+                <strong>Resultado:</strong> Estás perdiendo $50 por cliente. Necesitas reducir CAC o aumentar LTV antes de escalar.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Ignorar el CAC y solo mirar cuántas ventas haces. Puedes vender mucho pero perder dinero en cada venta. Mide TODO: CAC, LTV, ROI por canal, ROI por campaña. Los números no mienten.</p>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="prevLesson()">← Anterior</button>
+            <button class="nav-btn next" onclick="nextLesson()">Siguiente →</button>
+        </div>
+    </div>
+
+    <footer class="footer"><p>&copy; 2026 Seven App</p></footer>
+
+    <div id="paywallOverlay" class="paywall-overlay" style="display:none;">
+        <div class="paywall-box">
+            <div class="icon">🔒</div>
+            <h2>Contenido Bloqueado</h2>
+            <p>Este contenido requiere el curso completo. Desbloquea para acceder a todas las lecciones.</p>
+            <a href="pago.html?course=marketing-digital" class="btn-unlock">💳 Desbloquear por $7 USD</a>
+            <a href="marketing-digital.html" class="back-link">← Volver al curso</a>
+        </div>
+    </div>
+
+    <script>
+        const lessons = 4;
+        let currentLesson = 1;
+        const courseId = 'marketing-digital';
+
+        function updateDisplay() {
+            document.getElementById('count').textContent = currentLesson;
+            document.getElementById('total').textContent = lessons;
+            document.getElementById('progress').style.width = (currentLesson / lessons * 100) + '%';
+            for (let i = 1; i <= lessons; i++) {
+                const card = document.getElementById('lesson' + i);
+                if (card) {
+                    card.style.display = i === currentLesson ? 'block' : 'none';
+                }
+            }
+        }
+
+        function nextLesson() {
+            if (currentLesson < lessons) {
+                currentLesson++;
+                updateDisplay();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                window.location.href = 'mk-3.html';
+            }
+        }
+
+        function prevLesson() {
+            if (currentLesson > 1) {
+                currentLesson--;
+                updateDisplay();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                window.location.href = 'mk-1.html';
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            document.querySelector('.theme-toggle').textContent = isLight ? '☀️' : '🌙';
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+
+        async function checkAccess() {
+            const purchased = JSON.parse(localStorage.getItem('sevenPurchased') || '[]');
+            if (!purchased.includes(courseId)) {
+                document.getElementById('paywallOverlay').style.display = 'flex';
+            }
+        }
+        updateDisplay();
+        checkAccess();
+    </script>
+</body>
+</html>

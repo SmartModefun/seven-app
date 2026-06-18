@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seven App - Aprende Inglés en 7 Días</title>
+<meta name="description" content="Aprende inglés rápido con Seven App. Curso práctico de 7 días con audio, ejercicios y acceso inmediato.">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="assets/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <script src="capacitor-bridge.js"></script>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <img src="assets/logo.png" class="logo" onclick="startCourse()" alt="Seven App">
+            <div style="display: flex; align-items: center;">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar modo">
+                    🌙
+                </button>
+                <button class="btn-primary" onclick="startCourse()">Comenzar Gratis</button>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-background">
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+            <div class="orb orb-3"></div>
+        </div>
+        <div class="hero-content">
+            <span class="badge">✨ Método Ramón Campayo</span>
+            <h1>Aprende <span class="gradient-text">Inglés en 7 Días</span></h1>
+            <p class="hero-subtitle">Habla frases reales desde el primer día</p>
+            <button class="btn-primary btn-large" onclick="startCourse()">Comenzar Gratis</button>
+        </div>
+    </section>
+
+    <section class="course-overview">
+        <div class="section-header">
+            <h2>El Curso: 7 Días de Inglés</h2>
+            <p>Contenido estructurado según el método SRCI</p>
+        </div>
+        
+        <div class="days-container">
+            <div class="day-row">
+                <div class="day-card free" onclick="openDay(1)">
+                    <div class="day-num">1</div>
+                    <div class="day-info">
+                        <h3>Saludos y Presentaciones</h3>
+                        <p>Hello, Thank you, Please...</p>
+                    </div>
+                    <span class="day-badge">GRATIS</span>
+                </div>
+                
+                <div class="day-card" onclick="openDay(2)">
+                    <div class="day-num">2</div>
+                    <div class="day-info">
+                        <h3>Conversación Básica</h3>
+                        <p>How are you? I'm fine...</p>
+                    </div>
+                    <span class="day-badge">$7</span>
+                </div>
+                
+                <div class="day-card" onclick="openDay(3)">
+                    <div class="day-num">3</div>
+                    <div class="day-info">
+                        <h3>En el Restaurante</h3>
+                        <p>Menu, cena, pedir...</p>
+                    </div>
+                    <span class="day-badge">$7</span>
+                </div>
+                
+                <div class="day-card" onclick="openDay(4)">
+                    <div class="day-num">4</div>
+                    <div class="day-info">
+                        <h3>En el Hotel</h3>
+                        <p>Room, key, check-in...</p>
+                    </div>
+                    <span class="day-badge">$7</span>
+                </div>
+                
+                <div class="day-card" onclick="openDay(5)">
+                    <div class="day-num">5</div>
+                    <div class="day-info">
+                        <h3>Transporte</h3>
+                        <p>Taxi, bus, metro...</p>
+                    </div>
+                    <span class="day-badge">$7</span>
+                </div>
+                
+                <div class="day-card" onclick="openDay(6)">
+                    <div class="day-num">6</div>
+                    <div class="day-info">
+                        <h3>Compras</h3>
+                        <p>Price, size, payment...</p>
+                    </div>
+                    <span class="day-badge">$7</span>
+                </div>
+                
+                <div class="day-card" onclick="openDay(7)">
+                    <div class="day-num">7</div>
+                    <div class="day-info">
+                        <h3>Conversación Real</h3>
+                        <p>Diálogos completos...</p>
+                    </div>
+                    <span class="day-badge">$7</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="pricing" id="pricing">
+        <div class="section-header">
+            <h2>Desbloquea el Curso Completo</h2>
+            <p>Accede a los días 2-7 por solo:</p>
+        </div>
+        
+        <div class="price-tag">$7 USD</div>
+        
+        <div class="paypal-box">
+            <a href="https://www.paypal.com/ncp/payment/NYP8KUKK5TWM8" 
+               target="_blank" 
+               class="paypal-link">
+                💳 Pagar con PayPal
+            </a>
+        </div>
+        
+        <p style="color: #6b7280; font-size: 12px; margin-top: 15px;">🔒 Pago seguro</p>
+    </section>
+
+    <footer class="footer">
+        <p>&copy; 2026 Seven App</p>
+        <p style="margin-top: 8px;">📧 <a href="mailto:info@seven-app.com" style="color: #6366f1; text-decoration: none;">info@seven-app.com</a></p>
+    </footer>
+
+    <script>
+        function toggleTheme() {
+            const body = document.body;
+            const btn = document.querySelector('.theme-toggle');
+            
+            if (body.classList.contains('light-mode')) {
+                body.classList.remove('light-mode');
+                btn.textContent = '🌙';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.add('light-mode');
+                btn.textContent = '☀️';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+        
+        function loadTheme() {
+            const saved = localStorage.getItem('theme');
+            if (saved === 'light') {
+                document.body.classList.add('light-mode');
+                document.querySelector('.theme-toggle').textContent = '☀️';
+            }
+        }
+        
+        loadTheme();
+        
+        function startCourse() {
+            window.location.href = 'ingles-1.html';
+        }
+        
+        async function openDay(day) {
+            if (day === 1) {
+                window.location.href = 'ingles-1.html';
+            } else {
+                const purchased = JSON.parse(localStorage.getItem('sevenPurchased') || '[]');
+                if (purchased.includes('ingles-7-dias')) {
+                    window.location.href = 'ingles-' + day + '.html';
+                } else if (window.CapacitorBridge && window.CapacitorBridge.isCapacitor) {
+                    try {
+                        await window.CapacitorBridge.initRevenueCat();
+                        const hasAccess = await window.CapacitorBridge.checkCourseAccess('ingles-7-dias');
+                        if (hasAccess) {
+                            purchased.push('ingles-7-dias');
+                            localStorage.setItem('sevenPurchased', JSON.stringify(purchased));
+                            window.location.href = 'ingles-' + day + '.html';
+                        } else {
+                            window.location.href = 'pago.html?course=ingles-7-dias';
+                        }
+                    } catch (e) {
+                        window.location.href = 'pago.html?course=ingles-7-dias';
+                    }
+                } else {
+                    window.location.href = 'pago.html?course=ingles-7-dias';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

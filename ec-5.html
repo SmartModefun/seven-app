@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seven App - EC Día 5: Envíos</title>
+    <link rel="icon" href="assets/favicon.png">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <style>
+        .paywall-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(10,10,15,0.95); z-index:1000; display:flex; align-items:center; justify-content:center; }
+        .paywall-box { background:var(--bg-secondary); border:1px solid var(--border); border-radius:20px; padding:40px; text-align:center; max-width:400px; margin:20px; }
+        .paywall-box .icon { font-size:64px; margin-bottom:16px; }
+        .paywall-box h2 { color:var(--accent-primary); margin-bottom:12px; }
+        .paywall-box p { color:var(--text-secondary); margin-bottom:24px; }
+        .paywall-box .btn-unlock { display:inline-block; background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary)); color:white; padding:14px 32px; border-radius:10px; text-decoration:none; font-weight:600; }
+        .paywall-box .back-link { display:block; margin-top:16px; color:var(--text-muted); text-decoration:none; }
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --accent-primary: #6366f1;
+            --accent-secondary: #818cf8;
+            --accent-cyan: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border: #2a2a3a;
+        }
+
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            padding-top: 80px;
+            line-height: 1.6;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+        }
+
+        .header-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(18, 18, 26, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+        }
+
+        .header-bar img {
+            height: 35px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .header-bar img:hover {
+            transform: scale(1.1);
+        }
+
+        .theme-toggle, .home-btn {
+            background: var(--bg-tertiary);
+            color: white;
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover, .home-btn:hover {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .day-title {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 20px;
+            background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%);
+            border-radius: 20px;
+            margin-top: 20px;
+        }
+
+        .day-title h1 {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0 0 12px 0;
+            font-size: 32px;
+        }
+
+        .day-title p {
+            color: var(--text-secondary);
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .progress-bar {
+            background: var(--bg-tertiary);
+            height: 8px;
+            border-radius: 4px;
+            margin: 25px 0;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-cyan));
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s ease;
+            border-radius: 4px;
+        }
+
+        .lesson-count {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 14px;
+            margin: 15px 0;
+        }
+
+        .lesson-count span {
+            color: var(--accent-primary);
+            font-weight: 600;
+        }
+
+        .lesson-card {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 35px;
+            margin: 25px 0;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .lesson-card:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15);
+        }
+
+        .lesson-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .lesson-title::before {
+            content: '';
+            width: 4px;
+            height: 28px;
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-cyan));
+            border-radius: 2px;
+        }
+
+        .lesson-text {
+            font-size: 16px;
+            line-height: 1.85;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .lesson-text strong {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .lesson-example {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.05));
+            border-left: 4px solid var(--accent-primary);
+            padding: 24px;
+            margin: 25px 0;
+            border-radius: 0 16px 16px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lesson-example::before {
+            content: '💡';
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 24px;
+            opacity: 0.3;
+        }
+
+        .lesson-example-title {
+            color: var(--accent-primary);
+            font-weight: 700;
+            margin-bottom: 12px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .lesson-example p {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 15px;
+            line-height: 1.75;
+        }
+
+        .lesson-warning {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.05));
+            border-left: 4px solid var(--warning);
+            padding: 24px;
+            margin: 25px 0;
+            border-radius: 0 16px 16px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lesson-warning::before {
+            content: '⚠️';
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 24px;
+            opacity: 0.3;
+        }
+
+        .lesson-warning-title {
+            color: var(--warning);
+            font-weight: 700;
+            margin-bottom: 12px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .lesson-warning p {
+            margin: 0;
+            color: #fcd34d;
+            font-size: 15px;
+            line-height: 1.75;
+        }
+
+        .lesson-step {
+            display: flex;
+            gap: 16px;
+            margin: 25px 0;
+            padding: 20px;
+            background: var(--bg-tertiary);
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .lesson-step:hover {
+            border-color: var(--accent-primary);
+            transform: translateX(5px);
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+            font-size: 16px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-content h4 {
+            margin: 0 0 8px 0;
+            color: var(--text-primary);
+            font-size: 17px;
+        }
+
+        .step-content p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.65;
+        }
+
+        .vocab-box {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.03));
+            border-radius: 16px;
+            padding: 24px;
+            margin: 25px 0;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .vocab-title {
+            color: var(--success);
+            font-weight: 700;
+            margin-bottom: 16px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .vocab-item {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 12px;
+            font-size: 15px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .vocab-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .vocab-term {
+            color: var(--accent-cyan);
+            font-weight: 600;
+            min-width: 140px;
+            flex-shrink: 0;
+        }
+
+        .vocab-def {
+            color: var(--text-secondary);
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            gap: 15px;
+        }
+
+        .nav-btn {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            padding: 14px 28px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            flex: 1;
+            text-align: center;
+        }
+
+        .nav-btn:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent-primary);
+        }
+
+        .nav-btn.next {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            color: white;
+        }
+
+        .nav-btn.next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 14px;
+            border-top: 1px solid var(--border);
+            margin-top: 60px;
+        }
+
+        body.light-mode {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+        }
+
+        body.light-mode .lesson-card {
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .lesson-card {
+                padding: 25px 20px;
+                border-radius: 16px;
+            }
+            
+            .day-title h1 {
+                font-size: 26px;
+            }
+            
+            .nav-buttons {
+                flex-direction: column;
+            }
+            
+            .nav-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <img src="assets/logo.png" onclick="window.location.href='index.html'" alt="Seven App">
+        <div style="display: flex; gap: 10px;">
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            <a href="ecommerce.html" class="home-btn">← Volver</a>
+            <a href="index.html" class="home-btn">🏠 Inicio</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="day-title">
+            <h1>Día 5: Envíos</h1>
+            <p>Costos, opciones y cómo no perder en envíos</p>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+        <div class="lesson-count">Lección <span id="count">1</span> de <span id="total">4</span></div>
+
+        <div class="lesson-card" id="lesson1">
+            <div class="lesson-title">El costo de envío y cómo manejarlo</div>
+            <div class="lesson-text">
+                Los envíos son uno de los aspectos más complejos y costosos del e-commerce. En Latinoamérica, donde las distancias pueden ser enormes y la infraestructura logística inconsistente, <strong>dominar este tema puede ser la diferencia entre rentabilidad y pérdidas</strong>.
+            </div>
+            <div class="lesson-text">
+                El costo de envío promedio en e-commerce latinoamericano varía enormemente: puede ir desde <strong>$2-3 USD</strong> para envíos locales ligeros hasta <strong>$15-30 USD</strong> para envíos nacionales de productos pesados. Si vendes productos de bajo margen, estos costos pueden comerse tu ganancia completa.
+            </div>
+            <div class="lesson-text">
+                La opción más común es <strong>cobrar el envío al cliente</strong>. Pero esto añade fricción: muchos abandonan el carrito al ver costos de envío altos. La alternativa es ofrecer envío gratis, pero absorbiendo ese costo en tu precio. La tercera opción, y muchas veces la mejor: <strong>envío gratuito a partir de cierto monto</strong> (ej: gratis en pedidos mayores a $50).
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">Ejemplo práctico</div>
+                <p>Una tienda de skincare en Colombia cobraba $8 USD de envío fijo. Sus productos principales eran de $15-25 USD, así que el envío representaba 30-50% del pedido. Al implementar envío gratis en pedidos mayores a $35, las ventas complementarias aumentaron 60%, y el ingreso promedio subió de $22 a $42.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">Error común</div>
+                <p>Ofrecer envío "gratis" sin haberlo calculado en el precio. Si tu producto vale $20 y te cuesta $5 enviarlo, en realidad estás vendiendo a $15. Sé transparente con tus precios.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson2">
+            <div class="lesson-title">Opciones de envío en Latam</div>
+            <div class="lesson-text">
+                En <strong>México</strong>, las opciones principales son: Correos de México (económico pero lento), Paquetexpress, Estafeta (buen balance precio/velocidad), y los servicios de DHL, FedEx, UPS (más caros pero confiables). Si vendes en Mercado Libre, Mercado Envíos integra directamente estas opciones con tarifas preferenciales.
+            </div>
+            <div class="lesson-text">
+                En <strong>Brasil</strong>, los Correios son el actor dominante, con servicios como PAC (económico) y SEDEX (expreso). Pero hay barreras reales: el custo de importação (aranceles de importación) puede hacer prohibitiva la venta cross-border. Muchos e-commerces brasileños solo envían dentro de Brasil.
+            </div>
+            <div class="lesson-text">
+                En <strong>Colombia</strong>, 4-72 es el operador principal de mensajería nacional. Para envíos pequeños, Envía y Coordinadora también son populares. 注意：如果你的目标市场是拉丁美洲的偏远地区，成本可能比主要城市高2-3倍.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">Ejemplo práctico</div>
+                <p>Una marca de café de especialidad en Colombia inicialmente solo enviaba a direcciones específicas. Un 25% de sus envíos fallaban por dirección incorrecta. Al agregar opción de recogida en punto 4-72 y locker, las entregas exitosas subieron a 95%, y los costos de reenvío bajaron significativamente.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">Error común</div>
+                <p>Assume que los costos de envío son estáticos. Las tarifas cambian, el combustible sube, y las políticas de las paqueterías cambian. Revisa tus costos trimestralmente y ajusta antes de que te sorprendan.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson3">
+            <div class="lesson-title">Packaging que impresiona</div>
+            <div class="lesson-text">
+                El empaque es tu <strong>primer touchpoint físico</strong> con el cliente. En e-commerce, donde el cliente no puede ver ni tocar el producto antes de recibirlo, el unboxing experience se convierte en un momento crucial. Un empaque bien diseñado crea el "wow" que se traduce en reseñas positivas y redes sociales.
+            </div>
+            <div class="lesson-text">
+                Funcionalidad primero: tu empaque debe <strong>proteger el producto</strong>. Un化妆水瓶 roto por mal embalaje resulta en cliente furioso, producto perdido, y costo de devolución. Invierte en cartón de calidad adecuada, relleno interno (foam, papel kraft, airbags), y tamaño de caja apropiado.
+            </div>
+            <div class="lesson-text">
+                La estética comunica tu marca. Incluso con presupuesto limitado, puedes tener un empaque presentable: una caja limpia con tu logo, papel de regalo interno, y una tarjeta de agradecimiento. Esto no requiere ser caro, requiere ser <strong>intencional</strong>.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">Ejemplo práctico</div>
+                <p>Una marca de joyería artesanal comenzó usando bolsitas genéricas. Sus clientes se quejaban de que "se sentía barato". Al cambiar a cajas personalizadas con velvet interior, cinta de marca, y tarjeta con mensaje del fundador, las fotos de unboxing se triplicaron, y las reseñas mencionaban "empaque premium".</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">Error común</div>
+                <p>Sobre-empaquetar. Un par de aretes no necesita una caja de zapatos. El empaque debe ser proporcional al producto y expectativas del cliente. Un empaque excesivamente elaborado para un producto económico puede generar expectativas que no cumple.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson4">
+            <div class="lesson-title">Tiempos de entrega y expectativas</div>
+            <div class="lesson-text">
+                Los tiempos de entrega son una de las principales razones de <strong>insatisfacción en e-commerce</strong>. Un cliente que espera su producto en 3 días y lo recibe en 10, aunque el producto sea perfecto, queda decepcionado. Gestionar expectativas desde el inicio es fundamental.
+            </div>
+            <div class="lesson-text">
+                Sé realista con tus tiempos. Si tu proveedor tarda 5 días en enviarte el producto y luego tú tardas 2 días en empacar, ya son 7 días antes de que salga de tu almacén. Comunica esto claramente. Es mejor prometer 10 días y entregar en 8 que prometer 5 y tardar 12.
+            </div>
+            <div class="lesson-text">
+                Los pedidos en dropshipping tienen tiempos diferentes a inventario propio. Si trabajas con proveedores que envían directamente, sus tiempos pueden ser de <strong>15-30 días</strong> (especialmente si vienen de China). Esto requiere comunicación clara al cliente antes de que compre.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">Ejemplo práctico</div>
+                <p>Una tienda de productos de belleza coreanos sufrió muchas quejas por retrasos. Al implementar tracking con actualizaciones automáticas por email y SMS, las consultas de "dónde está mi pedido" bajaron 80%, y las reseñas negativas por retrasos disminuyeron drásticamente.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">Error común</div>
+                <p>Prometer tiempos que no puedes cumplir para hacer la venta. Un cliente que recibe su pedido tarde es menos probable que recompra y más probable que deje una reseña negativa. Las malas reseñas por logística son difíciles de recuperarse.</p>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="ec-4.html" class="nav-btn">← Anterior</a>
+            <a href="ec-6.html" class="nav-btn next">Siguiente →</a>
+        </div>
+    </div>
+
+    <footer class="footer"><p>© 2026 Seven App</p></footer>
+
+    <div id="paywallOverlay" class="paywall-overlay" style="display:none;">
+        <div class="paywall-box">
+            <div class="icon">🔒</div>
+            <h2>Contenido Bloqueado</h2>
+            <p>Este contenido requiere el curso completo. Desbloquea para acceder a todas las lecciones.</p>
+            <a onclick="goToNext()" class="btn-unlock">💳 Desbloquear por $7 USD</a>
+            <a href="ecommerce.html" class="back-link">← Volver al curso</a>
+        </div>
+    </div>
+
+    <script>
+        const lessons = 4;
+        let currentLesson = 1;
+        const courseId = 'ecommerce';
+
+        async function checkAccess() {
+            const purchased = JSON.parse(localStorage.getItem('sevenPurchased') || '[]');
+            if (!purchased.includes(courseId)) {
+                document.getElementById('paywallOverlay').style.display = 'flex';
+            }
+        }
+        checkAccess();
+    </script>
+</body>
+</html>

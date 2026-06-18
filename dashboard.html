@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Panel - Seven App</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="assets/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        .dashboard-container {
+            min-height: calc(100vh - 70px);
+            padding: 60px 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .dashboard-header {
+            margin-bottom: 40px;
+        }
+
+        .dashboard-header h1 {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .user-email {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .verified-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 12px;
+        }
+
+        .unverified-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 12px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: var(--text-secondary);
+        }
+
+        .my-courses {
+            margin-bottom: 48px;
+        }
+
+        .course-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .course-item {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 24px;
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .course-item:hover {
+            border-color: var(--accent-primary);
+            transform: translateX(8px);
+        }
+
+        .course-item-icon {
+            font-size: 40px;
+        }
+
+        .course-item-info {
+            flex: 1;
+        }
+
+        .course-item-info h3 {
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+
+        .course-item-info p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .course-item-btn {
+            padding: 12px 24px;
+        }
+
+        .no-courses {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 48px;
+            text-align: center;
+            border: 2px dashed var(--border);
+        }
+
+        .no-courses-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .no-courses h3 {
+            margin-bottom: 8px;
+        }
+
+        .no-courses p {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .all-courses .section-title {
+            margin-top: 48px;
+        }
+
+        .course-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .course-card {
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 24px;
+            border: 2px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .course-card:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-4px);
+        }
+
+        .course-card-icon {
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+
+        .course-card h3 {
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .course-card p {
+            color: var(--text-secondary);
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+
+        .course-card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .course-card-price {
+            font-weight: 700;
+            color: var(--accent-secondary);
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <img src="assets/logo.png" class="logo" onclick="window.location.href='index.html'" alt="Seven App">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar modo">🌙</button>
+                <button class="btn-secondary" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h1>¡Bienvenido, <span id="userName">Usuario</span>!</h1>
+            <span class="user-email" id="userEmail">cargando...</span>
+            <span id="verificationBadge"></span>
+        </div>
+
+        <section class="my-courses">
+            <h2 class="section-title">Mis Cursos</h2>
+            <div id="myCoursesList" class="course-list">
+            </div>
+        </section>
+
+        <section class="all-courses">
+            <h2 class="section-title">Cursos Disponibles</h2>
+            <div id="allCoursesGrid" class="course-grid">
+            </div>
+        </section>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script>
+        const allCourses = [
+            {
+                id: 'ingles-7-dias',
+                icon: '🌐',
+                title: 'Inglés en 7 Días',
+                description: 'Método Ramón Campayo para hablar frases reales',
+                price: 7
+            },
+            {
+                id: 'community-manager',
+                icon: '📱',
+                title: 'Community Manager en 7 Días',
+                description: 'Domina la gestión de redes sociales',
+                price: 7
+            },
+            {
+                id: 'marketing-digital',
+                icon: '📈',
+                title: 'Marketing Digital en 7 Días',
+                description: 'Estrategias digitales para tu negocio',
+                price: 7
+            },
+            {
+                id: 'ecommerce',
+                icon: '🛒',
+                title: 'E-commerce en 7 Días',
+                description: 'Crea y gestiona tu tienda online',
+                price: 7
+            }
+        ];
+
+        let userData = null;
+
+        async function loadDashboard() {
+            const user = firebase.auth().currentUser;
+            
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('userEmail').textContent = user.email;
+            document.getElementById('userName').textContent = user.displayName || user.email.split('@')[0];
+
+            const badge = document.getElementById('verificationBadge');
+            if (user.emailVerified) {
+                badge.className = 'verified-badge';
+                badge.innerHTML = '✓ Email verificado';
+            } else {
+                badge.className = 'unverified-badge';
+                badge.innerHTML = '⚠ Sin verificar';
+            }
+
+            try {
+                const doc = await db.collection('users').doc(user.uid).get();
+                if (doc.exists) {
+                    userData = doc.data();
+                    renderCourses();
+                }
+            } catch (error) {
+                console.error('Error loading user data:', error);
+                renderCourses();
+            }
+        }
+
+        function renderCourses() {
+            const ownedCourses = userData?.courses || [];
+            const myCoursesList = document.getElementById('myCoursesList');
+            const allCoursesGrid = document.getElementById('allCoursesGrid');
+
+            const myCourseItems = allCourses.filter(c => ownedCourses.includes(c.id));
+            
+            if (myCourseItems.length === 0) {
+                myCoursesList.innerHTML = `
+                    <div class="no-courses">
+                        <div class="no-courses-icon">📚</div>
+                        <h3>No tienes cursos aún</h3>
+                        <p>Adquiere tu primer curso y empieza a aprender</p>
+                        <button class="btn-primary" onclick="window.location.href='index.html'">
+                            Ver Cursos Disponibles
+                        </button>
+                    </div>
+                `;
+            } else {
+                myCoursesList.innerHTML = myCourseItems.map(course => `
+                    <div class="course-item">
+                        <div class="course-item-icon">${course.icon}</div>
+                        <div class="course-item-info">
+                            <h3>${course.title}</h3>
+                            <p>Acceso completo</p>
+                        </div>
+                        <button class="btn-primary course-item-btn" onclick="window.location.href='${course.id}.html'">
+                            Continuar →
+                        </button>
+                    </div>
+                `).join('');
+            }
+
+            const availableCourses = allCourses.filter(c => !ownedCourses.includes(c.id));
+            allCoursesGrid.innerHTML = availableCourses.map(course => `
+                <div class="course-card">
+                    <div class="course-card-icon">${course.icon}</div>
+                    <h3>${course.title}</h3>
+                    <p>${course.description}</p>
+                    <div class="course-card-footer">
+                        <span class="course-card-price">$${course.price}</span>
+                        <button class="btn-primary btn-small" onclick="window.location.href='pago.html?course=${course.id}'">
+                            Comprar
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function logout() {
+            await firebase.auth().signOut();
+            window.location.href = 'index.html';
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const btn = document.querySelector('.theme-toggle');
+            
+            if (body.classList.contains('light-mode')) {
+                body.classList.remove('light-mode');
+                btn.textContent = '🌙';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.add('light-mode');
+                btn.textContent = '☀️';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        function loadTheme() {
+            const saved = localStorage.getItem('theme');
+            if (saved === 'light') {
+                document.body.classList.add('light-mode');
+                document.querySelector('.theme-toggle').textContent = '☀️';
+            }
+        }
+
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                loadDashboard();
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        loadTheme();
+    </script>
+</body>
+</html>

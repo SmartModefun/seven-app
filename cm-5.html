@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seven App - CM Día 5: Métricas</title>
+    <link rel="icon" href="assets/favicon.png">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --accent-primary: #6366f1;
+            --accent-secondary: #818cf8;
+            --accent-cyan: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border: #2a2a3a;
+        }
+
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            padding-top: 80px;
+            line-height: 1.6;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+        }
+
+        .header-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(18, 18, 26, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+        }
+
+        .header-bar img {
+            height: 35px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .header-bar img:hover {
+            transform: scale(1.1);
+        }
+
+        .theme-toggle, .home-btn {
+            background: var(--bg-tertiary);
+            color: white;
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover, .home-btn:hover {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .day-title {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 20px;
+            background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%);
+            border-radius: 20px;
+            margin-top: 20px;
+        }
+
+        .day-title h1 {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0 0 12px 0;
+            font-size: 32px;
+        }
+
+        .day-title p {
+            color: var(--text-secondary);
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .progress-bar {
+            background: var(--bg-tertiary);
+            height: 8px;
+            border-radius: 4px;
+            margin: 25px 0;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-cyan));
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s ease;
+            border-radius: 4px;
+        }
+
+        .lesson-count {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 14px;
+            margin: 15px 0;
+        }
+
+        .lesson-count span {
+            color: var(--accent-primary);
+            font-weight: 600;
+        }
+
+        .lesson-card {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 35px;
+            margin: 25px 0;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .lesson-card:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15);
+        }
+
+        .lesson-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .lesson-title::before {
+            content: '';
+            width: 4px;
+            height: 28px;
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-cyan));
+            border-radius: 2px;
+        }
+
+        .lesson-text {
+            font-size: 16px;
+            line-height: 1.85;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .lesson-text strong {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .lesson-example {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.05));
+            border-left: 4px solid var(--accent-primary);
+            padding: 24px;
+            margin: 25px 0;
+            border-radius: 0 16px 16px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lesson-example::before {
+            content: '💡';
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 24px;
+            opacity: 0.3;
+        }
+
+        .lesson-example-title {
+            color: var(--accent-primary);
+            font-weight: 700;
+            margin-bottom: 12px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .lesson-example p {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 15px;
+            line-height: 1.75;
+        }
+
+        .lesson-warning {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.05));
+            border-left: 4px solid var(--warning);
+            padding: 24px;
+            margin: 25px 0;
+            border-radius: 0 16px 16px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lesson-warning::before {
+            content: '⚠️';
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 24px;
+            opacity: 0.3;
+        }
+
+        .lesson-warning-title {
+            color: var(--warning);
+            font-weight: 700;
+            margin-bottom: 12px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .lesson-warning p {
+            margin: 0;
+            color: #fcd34d;
+            font-size: 15px;
+            line-height: 1.75;
+        }
+
+        .lesson-step {
+            display: flex;
+            gap: 16px;
+            margin: 25px 0;
+            padding: 20px;
+            background: var(--bg-tertiary);
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .lesson-step:hover {
+            border-color: var(--accent-primary);
+            transform: translateX(5px);
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+            font-size: 16px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-content h4 {
+            margin: 0 0 8px 0;
+            color: var(--text-primary);
+            font-size: 17px;
+        }
+
+        .step-content p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.65;
+        }
+
+        .vocab-box {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.03));
+            border-radius: 16px;
+            padding: 24px;
+            margin: 25px 0;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .vocab-title {
+            color: var(--success);
+            font-weight: 700;
+            margin-bottom: 16px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .vocab-item {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 12px;
+            font-size: 15px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .vocab-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .vocab-term {
+            color: var(--accent-cyan);
+            font-weight: 600;
+            min-width: 140px;
+            flex-shrink: 0;
+        }
+
+        .vocab-def {
+            color: var(--text-secondary);
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            gap: 15px;
+        }
+
+        .nav-btn {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            padding: 14px 28px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            flex: 1;
+            text-align: center;
+        }
+
+        .nav-btn:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent-primary);
+        }
+
+        .nav-btn.next {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            color: white;
+        }
+
+        .nav-btn.next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 14px;
+            border-top: 1px solid var(--border);
+            margin-top: 60px;
+        }
+
+        .paywall-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(10,10,15,0.95); z-index:1000; display:flex; align-items:center; justify-content:center; }
+        .paywall-box { background:var(--bg-secondary); border:1px solid var(--border); border-radius:20px; padding:40px; text-align:center; max-width:400px; margin:20px; }
+        .paywall-box .icon { font-size:64px; margin-bottom:16px; }
+        .paywall-box h2 { color:var(--accent-primary); margin-bottom:12px; }
+        .paywall-box p { color:var(--text-secondary); margin-bottom:24px; }
+        .paywall-box .btn-unlock { display:inline-block; background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary)); color:white; padding:14px 32px; border-radius:10px; text-decoration:none; font-weight:600; }
+        .paywall-box .back-link { display:block; margin-top:16px; color:var(--text-muted); text-decoration:none; }
+
+        body.light-mode {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+        }
+
+        body.light-mode .lesson-card {
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .lesson-card {
+                padding: 25px 20px;
+                border-radius: 16px;
+            }
+            
+            .day-title h1 {
+                font-size: 26px;
+            }
+            
+            .nav-buttons {
+                flex-direction: column;
+            }
+            
+            .nav-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <img src="assets/logo.png" onclick="window.location.href='index.html'" alt="Seven App">
+        <div style="display: flex; gap: 10px;">
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            <a href="community-manager.html" class="home-btn">← Volver</a>
+            <a href="index.html" class="home-btn">🏠 Inicio</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="day-title">
+            <h1>Métricas que Importan de Verdad</h1>
+            <p>Deja de medir vanity metrics y enfócate en lo que importa</p>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+        <div class="lesson-count">Lección <span id="count">1</span> de <span id="total">4</span></div>
+
+        <div class="lesson-card" id="lesson1">
+            <div class="lesson-title">Por qué la mayoría de métricas son inútiles</div>
+            <div class="lesson-text">
+                Existe una diferencia crítica entre métricas que "suenan bien" (vanity metrics) y métricas que realmente impactan tu negocio (actionable metrics). Muchos Community Managers se obsesionan con números grandes que no traducen a resultados tangibles.
+            </div>
+            <div class="lesson-text">
+                <strong>Vanity Metrics (métricas de vanidad):</strong><br><br>
+                <strong>Seguidores:</strong> 100k seguidores suena impresionante, pero si solo 500 interactúan con tu contenido, esos seguidores no valen nada. Puedes comprar seguidores, pero no puedes comprar engagement real.<br><br>
+                <strong>Likes:</strong> Un like es la forma más básica de engagement. Decir "tengo 1,000 likes" no significa nada si no hay comentarios, shares, o conversiones detrás.<br><br>
+                <strong>Impresiones:</strong> Cuántas veces se mostró tu contenido. Puede ser 100k impresiones pero si nadie hizo clic o interactuó, esas impresiones no generaron valor.<br><br>
+                <strong>Métricas que SÍ importan:</strong><br><br>
+                <strong>Engagement Rate:</strong> Porcentaje de tu audiencia que interactúa. Fórmula: (likes + comentarios + guardados + compartidos) / alcance x 100. Un engagement rate de 3%+ en Instagram es bueno.<br><br>
+                <strong>Reach (alcance real):</strong> Cuántas personas ÚNICAS vieron tu contenido. Esto sí te dice cuántas personas reached.<br><br>
+                <strong>Traffic a website:</strong> Cuántas personas fueron a tu web desde redes sociales. Esto sí puedes trackear y convertir.<br><br>
+                <strong>Leads generados:</strong> Cuántas personas mostraron interés real (completaron un form, te mandaron DM preguntando precios, etc).<br><br>
+                <strong>Conversiones:</strong> Cuántas de esas interacciones se convirtieron en clientes reales.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">Ejemplo práctico</div>
+                <p>Cuenta A: 50k seguidores, engagement 0.5%, 0 traffic a web, 0 leads.<br>Cuenta B: 5k seguidores, engagement 8%, 200 visitas mensuales a web, 15 leads calificados.<br><br>La cuenta B es 100x más valiosa aunque tiene 10x menos seguidores. Esta es la diferencia entre vanity y resultados.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">Error común</div>
+                <p>Reportar a clientes o jefe solo "seguidores ganados" y "posts publicados". Esto no demuestra valor. Un buen CM reporta: engagement específico, leads generados, tráfico referido, conversiones, y recomendaciones basadas en datos.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson2">
+            <div class="lesson-title">Cómo leer Instagram Insights efectivamente</div>
+            <div class="lesson-text">
+                Instagram Insights es tu mejor herramienta para entender qué está funcionando y qué no. Pero muchos CMs miran los números sin entender qué significan o cómo usarlos para mejorar. Vamos a deep dive en cada sección.
+            </div>
+            <div class="lesson-text">
+                <strong>Acceso a Insights:</strong> Solo disponible en cuentas profesionales (no en cuentas personales). Ve a tu perfil → toca "Insights" (icono de gráfico). Aquí encontraras tres secciones principales: Content, Audience, y Activity.
+            </div>
+            <div class="lesson-text">
+                <strong>Content (Contenido):</strong><br>
+                Muestra qué publicaciones están funcionando. Ordena por: Interacciones, Alcance, Descubrimiento, Guardados. Mira los TOP posts y analiza qué tienen en común: ¿son Reels o fotos? ¿De qué tema? ¿Qué hora publicaste? ¿Qué hashtags usaste? Esto te dice qué replicar.<br><br>
+                <strong>Audience (Audiencia):</strong><br>
+                Esta sección te dice QUIÉN te ve. Mira: rango de edad, género, ubicación, horarios de mayor actividad. Esta información es oro para saber cuándo publicar y qué tipo de contenido crear para tu audiencia específica.<br><br>
+                <strong>Activity (Actividad):</strong><br>
+                Muestra métricas de la última semana: alcance, impresiones, visitas al perfil, clicks en enlace. Úsalo para ver tendencias: ¿estás subiendo o bajando? ¿Qué días tienen mejor rendimiento?
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">Ejemplo práctico</div>
+                <p>Después de analizar Insights descubres: tu audiencia es 75% mujeres 25-34 años en Ciudad de México. Están más activas a las 9PM. Tus Reels tienen 3x más alcance que tus fotos. Tus posts con tutoriales tienen 5x más guardados.<br><br>Conclusión: necesitas más Reels de tutoriales, publicados a las 9PM, targeting a mujeres 25-34 en CDMX.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">Error común</div>
+                <p>No revisar Insights hasta que el cliente o jefe lo pide. Revisa al menos una vez por semana para detectar problemas temprano y ajustar estrategia. El análisis de datos debe ser un hábito, no una tarea ocasional.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson3">
+            <div class="lesson-title">Establecer KPIs que realmente importen</div>
+            <div class="lesson-text">
+                Un KPI (Key Performance Indicator) es una métrica específica con un target que indica éxito o fracaso. Sin KPIs claros, no puedes saber si tu estrategia está funcionando. Con KPIs claros, puedes hacer ajustes informados.
+            </div>
+            <div class="lesson-text">
+                <strong>Cómo definir KPIs efectivos:</strong><br><br>
+                <strong>1. Alinea KPIs con objetivos de negocio:</strong> ¿Qué quiere lograr la marca? Si quiere vender productos, el KPI debe ser "ventas desde Instagram", no "likes". Si quiere generar leads, KPI = "formularios completados", no "seguidores".<br><br>
+                <strong>2. Usa la regla SMART:</strong><br>
+                - Specific (Específico): No "más engagement", sino "engagement rate de 4%+"<br>
+                - Measurable (Medible): Debe poder cuantificarse<br>
+                - Achievable (Alcanzable): 4% puede ser realista para tu industria<br>
+                - Relevant (Relevante): Debe relacionarse con el objetivo final<br>
+                - Time-bound (Con plazo): "En los próximos 3 meses"<br><br>
+                <strong>3. Limita a 3-5 KPIs principales:</strong> No puedes optimizar para todo. Elige los 3-5 KPIs más importantes y enfócate en esos.
+            </div>
+            <div class="vocab-box">
+                <div class="vocab-title">📊 KPIs comunes según el objetivo</div>
+                <div class="vocab-item"><span class="vocab-term">Awareness:</span><span class="vocab-def">Alcance, Impresiones, Nuevos seguidores</span></div>
+                <div class="vocab-item"><span class="vocab-term">Engagement:</span><span class="vocab-def">Engagement rate, Comentarios, Guardados</span></div>
+                <div class="vocab-item"><span class="vocab-term">Conversión:</span><span class="vocab-def">Clics a web, Leads, Ventas</span></div>
+                <div class="vocab-item"><span class="vocab-term">Retención:</span><span class="vocab-def">Tasa de recompra, Engagement deseguidores</span></div>
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">Ejemplo práctico</div>
+                <p><strong>❌ KPI malo:</strong> "Aumentar presencia en Instagram"<br><br>
+                <strong>✅ KPI SMART:</strong> "Aumentar engagement rate del 1.5% actual al 3% en los próximos 3 meses, publishando 4 Reels y 2 carruseles semanales, con mínimo 3 Stories diarias."</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">Error común</div>
+                <p>KPIs que no puedes trackear. Si no tienes forma de medirlo, no es un KPI válido. Asegúrate de tener las herramientas correctas (Meta Business Suite, Google Analytics, UTM parameters) antes de definir tus KPIs.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson4">
+            <div class="lesson-title">Cuándo saber si vas bien: Benchmarks y expectativas</div>
+            <div class="lesson-text">
+                Saber si vas bien requiere contexto. 100 comentarios puede ser excelente para una cuenta con 1k seguidores o terrible para una con 1M. Aquí te doy benchmarks para saber dónde estás y qué esperar.
+            </div>
+            <div class="lesson-text">
+                <strong>Benchmarks de Engagement Rate (por plataforma):</strong><br><br>
+                <strong>Instagram Feed:</strong> 1-3% es promedio, 3-6% es bueno, 6%+ es excelente.<br>
+                <strong>Instagram Reels:</strong> 3-6% es bueno (el algoritmo premia Reels).<br>
+                <strong>Instagram Stories:</strong> Mide interacciones por Story. 1-3% es normal.<br>
+                <strong>TikTok:</strong> 4-8% es promedio, 8-15% es bueno, 15%+ es excelente.<br>
+                <strong>LinkedIn:</strong> 2-5% es normal para posts, artículos pueden tener tasas más altas.<br>
+                <strong>Facebook:</strong> 0.5-1% es promedio (plataforma más difícil).
+            </div>
+            <div class="lesson-text">
+                <strong>Expectativas realistas de crecimiento:</strong><br><br>
+                Nuevas cuentas (0-1k seguidores): Enfócate en engagement rate, no en seguidores. Un engagement rate alto atraerá seguidores orgánicamente.<br><br>
+                Cuentas en crecimiento (1k-10k): Esperar 100-300 nuevos seguidores/semana es realista con contenido consistente.<br><br>
+                Cuentas establecidas (10k+): El crecimiento % es menor pero el engagement absoluto es mayor. Mantén lo que funciona.<br><br>
+                <strong>Timeline de resultados:</strong> Los primeros 3 meses son de prueba y ajuste. No juzgues tu estrategia hasta tener al menos 90 días de data. Lo que funciona en la semana 1 puede ser diferente a lo que funciona en la semana 12.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">Ejemplo práctico</div>
+                <p>Mides tu cuenta después de 2 meses: Engagement rate subió del 1% al 2.5%, seguidores crecieron de 2k a 4.5k, traffic a web pasó de 50 a 300 visitas/mes. ¿Vas bien? SÍ. Has doblado engagement y seguidores en 2 meses. Esto es crecimiento saludable. No te compares con cuentas que llevan años o que compraron seguidores.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">Error común</div>
+                <p>Compararse con cuentas que no son comparables. Una cuenta de un medio de comunicación con 500k seguidores tiene recursos y equipo que tú no tienes. Compara tu cuenta CONTIGO MISMO del mes pasado. Mejora continua > competencia destructiva.</p>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="prevLesson()">← Anterior</button>
+            <button class="nav-btn next" onclick="nextLesson()">Siguiente →</button>
+        </div>
+    </div>
+
+    <footer class="footer"><p>© 2026 Seven App</p></footer>
+
+    <div id="paywallOverlay" class="paywall-overlay" style="display:none;">
+        <div class="paywall-box">
+            <div class="icon">🔒</div>
+            <h2>Contenido Bloqueado</h2>
+            <p>Este contenido requiere el curso completo. Desbloquea para acceder a todas las lecciones.</p>
+            <a href="pago.html?course=community-manager" class="btn-unlock">💳 Desbloquear por $7 USD</a>
+            <a href="community-manager.html" class="back-link">← Volver al curso</a>
+        </div>
+    </div>
+
+    <script>
+        const lessons = 4;
+        let currentLesson = 1;
+        const courseId = 'community-manager';
+
+        async function checkAccess() {
+            const purchased = JSON.parse(localStorage.getItem('sevenPurchased') || '[]');
+            if (!purchased.includes(courseId)) {
+                document.getElementById('paywallOverlay').style.display = 'flex';
+            }
+        }
+        checkAccess();
+    </script>
+</body>
+</html>

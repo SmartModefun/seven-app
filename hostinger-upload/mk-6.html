@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seven App - MK Día 6: Social Media Ads</title>
+    <link rel="icon" href="assets/favicon.png">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --accent-primary: #6366f1;
+            --accent-secondary: #818cf8;
+            --accent-cyan: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border: #2a2a3a;
+        }
+        body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); margin: 0; padding: 0; padding-top: 80px; line-height: 1.6; position: relative; }
+        body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 20% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 70%); pointer-events: none; z-index: -1; }
+        h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; }
+        .header-bar { position: fixed; top: 0; left: 0; right: 0; background: rgba(18, 18, 26, 0.95); backdrop-filter: blur(20px); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); z-index: 100; }
+        .header-bar img { height: 35px; cursor: pointer; transition: transform 0.3s ease; }
+        .header-bar img:hover { transform: scale(1.1); }
+        .theme-toggle, .home-btn { background: var(--bg-tertiary); color: white; border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; cursor: pointer; text-decoration: none; font-size: 14px; transition: all 0.3s ease; }
+        .theme-toggle:hover, .home-btn:hover { background: var(--accent-primary); border-color: var(--accent-primary); }
+        .container { max-width: 720px; margin: 0 auto; padding: 20px; }
+        .day-title { text-align: center; margin-bottom: 40px; padding: 40px 20px; background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%); border-radius: 20px; margin-top: 20px; }
+        .day-title h1 { background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0 0 12px 0; font-size: 32px; }
+        .day-title p { color: var(--text-secondary); margin: 0; font-size: 18px; }
+        .progress-bar { background: var(--bg-tertiary); height: 8px; border-radius: 4px; margin: 25px 0; overflow: hidden; border: 1px solid var(--border); }
+        .progress-fill { background: linear-gradient(90deg, var(--accent-primary), var(--accent-cyan)); height: 100%; width: 0%; transition: width 0.4s ease; border-radius: 4px; }
+        .lesson-count { text-align: center; color: var(--text-muted); font-size: 14px; margin: 15px 0; }
+        .lesson-count span { color: var(--accent-primary); font-weight: 600; }
+        .lesson-card { background: var(--bg-secondary); border-radius: 20px; padding: 35px; margin: 25px 0; border: 1px solid var(--border); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2); transition: all 0.3s ease; }
+        .lesson-card:hover { border-color: var(--accent-primary); box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15); }
+        .lesson-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; color: var(--accent-cyan); display: flex; align-items: center; gap: 12px; }
+        .lesson-title::before { content: ''; width: 4px; height: 28px; background: linear-gradient(180deg, var(--accent-primary), var(--accent-cyan)); border-radius: 2px; }
+        .lesson-text { font-size: 16px; line-height: 1.85; color: var(--text-secondary); margin-bottom: 20px; }
+        .lesson-text strong { color: var(--success); font-weight: 600; }
+        .lesson-example { background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.05)); border-left: 4px solid var(--accent-primary); padding: 24px; margin: 25px 0; border-radius: 0 16px 16px 0; position: relative; overflow: hidden; }
+        .lesson-example::before { content: '💡'; position: absolute; top: 12px; right: 16px; font-size: 24px; opacity: 0.3; }
+        .lesson-example-title { color: var(--accent-primary); font-weight: 700; margin-bottom: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .lesson-example p { margin: 0; color: var(--text-primary); font-size: 15px; line-height: 1.75; }
+        .lesson-warning { background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.05)); border-left: 4px solid var(--warning); padding: 24px; margin: 25px 0; border-radius: 0 16px 16px 0; position: relative; overflow: hidden; }
+        .lesson-warning::before { content: '⚠️'; position: absolute; top: 12px; right: 16px; font-size: 24px; opacity: 0.3; }
+        .lesson-warning-title { color: var(--warning); font-weight: 700; margin-bottom: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .lesson-warning p { margin: 0; color: #fcd34d; font-size: 15px; line-height: 1.75; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 40px; gap: 15px; }
+        .nav-btn { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); padding: 14px 28px; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: 500; text-decoration: none; transition: all 0.3s ease; flex: 1; text-align: center; }
+        .nav-btn:hover { background: var(--bg-secondary); border-color: var(--accent-primary); }
+        .nav-btn.next { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); border: none; color: white; }
+        .nav-btn.next:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4); }
+        .footer { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 14px; border-top: 1px solid var(--border); margin-top: 60px; }
+        .paywall-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(10,10,15,0.95); z-index:1000; display:flex; align-items:center; justify-content:center; }
+        .paywall-box { background:var(--bg-secondary); border:1px solid var(--border); border-radius:20px; padding:40px; text-align:center; max-width:400px; margin:20px; }
+        .paywall-box .icon { font-size:64px; margin-bottom:16px; }
+        .paywall-box h2 { color:var(--accent-primary); margin-bottom:12px; }
+        .paywall-box p { color:var(--text-secondary); margin-bottom:24px; }
+        .paywall-box .btn-unlock { display:inline-block; background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary)); color:white; padding:14px 32px; border-radius:10px; text-decoration:none; font-weight:600; }
+        .paywall-box .back-link { display:block; margin-top:16px; color:var(--text-muted); text-decoration:none; }
+        body.light-mode { --bg-primary: #f8fafc; --bg-secondary: #ffffff; --bg-tertiary: #f1f5f9; --text-primary: #0f172a; --text-secondary: #475569; --text-muted: #94a3b8; --border: #e2e8f0; }
+        body.light-mode .lesson-card { box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08); }
+        @media (max-width: 600px) { .container { padding: 15px; } .lesson-card { padding: 25px 20px; border-radius: 16px; } .day-title h1 { font-size: 26px; } .nav-buttons { flex-direction: column; } .nav-btn { width: 100%; } }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <img src="assets/logo.png" onclick="window.location.href='index.html'" alt="Seven App">
+        <div style="display: flex; gap: 10px;">
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            <a href="marketing-digital.html" class="home-btn">← Volver</a>
+            <a href="index.html" class="home-btn">🏠 Inicio</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="day-title">
+            <h1>Social Media Ads: Facebook, Instagram y TikTok</h1>
+            <p>Alcance pago segmentado y efectivo</p>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+        <div class="lesson-count">Lección <span id="count">1</span> de <span id="total">4</span></div>
+
+        <div class="lesson-card" id="lesson1">
+            <div class="lesson-title">Objetivos de campaña: Cómo elegir correctamente</div>
+            <div class="lesson-text">
+                El primer paso de cualquier campaña de social ads es elegir el objetivo de campaña correcto. Meta (Facebook/Instagram) optimiza tu campaña para el objetivo que elijas, así que si eliges mal, todo lo demás fallará.
+            </div>
+            <div class="lesson-text">
+                <strong>Los 3 grandes objetivos de Meta Ads:</strong><br><br>
+                <strong>1. Awareness (Conocimiento):</strong><br>
+                Para cuando quieres que más gente conozca tu marca. Usa esto al principio o para productos completamente nuevos.<br>
+                - Brand Awareness: Que la gente recuerde tu marca<br>
+                - Reach: Que la mayor cantidad de personas vea tu ad<br><br>
+                <strong>2. Consideration (Consideración):</strong><br>
+                Para cuando quieres que la gente te considere como opción.<br>
+                - Traffic: Llevar personas a tu web<br>
+                - Engagement: Más likes, comentarios, guardados<br>
+                - Lead Generation: Capturar emails sin que salgan de Facebook<br>
+                - App Installs: Instalar tu app<br><br>
+                <strong>3. Conversion (Conversión):</strong><br>
+                Para cuando quieres que las personas TOMEN ACCIÓN específica.<br>
+                - Conversions: Ventas, registros, leads calificados<br>
+                - Catalog Sales: Ventas desde catálogo de productos<br>
+                - Store Traffic: Personas a tu tienda física
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p>Lanzamiento de nuevo producto:<br>
+                Semana 1-2: Campaña Awareness para generar conocimiento<br>
+                Semana 3-4: Campaña Traffic/Engagement para consideración<br>
+                Semana 5+: Campaña Conversion para ventas<br><br>
+                SI empiezas con Conversion cuando nadie te conoce, el algoritmo tendrá difficulty encontrando personas interessadas y costs serán altos.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Elegir "Conversions" cuando no tienes suficiente data. Para que Meta optimice para conversiones, necesita data de conversiones previas. Si es tu primera campaña, empieza con Traffic o Engagement para generar data, luego cambia a Conversions.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson2">
+            <div class="lesson-title">Audiencias: El secreto del éxito</div>
+            <div class="lesson-text">
+                La diferencia entre campañas que funcionan y las que desperdician presupuesto casi siempre está en la audiencia. Una buena audiencia significa que tu mensaje llega a las personas correctas, y el algoritmo puede optimizarse efectivamente.
+            </div>
+            <div class="lesson-text">
+                <strong>Tipos de audiencias en Meta Ads:</strong><br><br>
+                <strong>1. Saved Audiences (Audiencias guardadas):</strong><br>
+                Creas audiencias basándote en demographics, intereses, y comportamientos.<br>
+                Ejemplo: "Mujeres, 25-35, interesadas en fitness y nutrición"<br>
+                Bueno para prospecting (encontrar nuevos clientes).<br><br>
+                <strong>2. Custom Audiences (Audiencias personalizadas):</strong><br>
+                Personas que YA tienen relación contigo.<br>
+                - Lista de clientes por email<br>
+                - Visitantes de tu web (via pixel)<br>
+                - Personas que interactuaron con tu contenido<br>
+                - Usuarios de tu app<br>
+                El target más preciso disponible.<br><br>
+                <strong>3. Lookalike Audiences (Públicos similares):</strong><br>
+                Nuevas personas que comparten características con tu mejor audiencia existente.<br>
+                Ejemplo: "Crear lookalike del 1% top de mis clientes"<br>
+                Excelente para escalar lo que ya funciona.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p>1. Cargas lista de 1,000 clientes existentes → Custom Audience<br>
+                2. Creas Lookalike basado en ese 1% top (los que más gastaron)<br>
+                3. Corres campaña de Conversion usando Lookalike<br>
+                Resultado: El algoritmo busca personas similares a tus mejores clientes = mayor probabilidad de conversión.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Audiencias demasiado amplias. "Todos en Colombia interesados en moda" son millones de personas muy diversas. Especifidad > amplitud. Es mejor una audiencia de 100k altamente relevante que 5M de relevancia media.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson3">
+            <div class="lesson-title">Creativos que convierten: Lo que funciona</div>
+            <div class="lesson-text">
+                En social ads, el creativo (lo visual + copy) es tan importante o más que el targeting. Puedes tener la audiencia perfecta pero si el creativo no conecta, no habrá conversiones. Aprende qué funciona.
+            </div>
+            <div class="lesson-text">
+                <strong>Principios de creativos efectivos:</strong><br><br>
+                <strong>1. Hook en los primeros 3 segundos:</strong><br>
+                En video, los primeros segundos决定 si la persona se queda o sigue scrolleando. Empieza con tu mejor momento, no con logo + música.<br><br>
+                <strong>2. Muestra, no cuentes:</strong><br>
+                Video del producto en uso > explicación verbal. Demo en vivo > foto estática. El producto funcionando es más convincente que describirlo.<br><br>
+                <strong>3. Beneficios, no features:</strong><br>
+                "Pierde 5kg en 30 días" > "Programa con 50 ejercicios". La gente compra resultados, no características.<br><br>
+                <strong>4. Prueba social:</strong><strong><br>
+                Logos de clientes, testimonios reales, números de resultados ("+10,000 clientes").<br><br>
+                <strong>5. CTA claro:</strong><br>
+                Cada ad debe tener UNA acción clara: "Compra ahora", "Descarga gratis", "Reserva tu demo".<br><br>
+                <strong>6. Formato nativo:</strong><br>
+                El ad debe sentirse como contenido de la plataforma, no como advertisement intrusion.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p><strong>❌ Ad malo:</strong> "Somos la mejor agencia de marketing. Visita nuestro sitio." + logo corporativo + foto de oficina.<br><br>
+                <strong>✅ Ad efectivo:</strong> Video de 15 segundos: "Lo que pasó en nuestra agencia la última semana" (behind-the-scenes real) → "¿QuieresGrow tu negocio? Agenda llamada." + botón claro.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Un solo ad no es suficiente. La fatiga de ad es real: después de ver el mismo ad muchas veces, las personas dejan de interactuar. Siempre testa múltiples variantes y rota creatives regularmente. Lo que funciona hoy puede morir en semanas.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson4">
+            <div class="lesson-title">Remarketing: El secreto del ROAS alto</div>
+            <div class="lesson-text">
+                El remarketing (o retargeting) es mostrar anuncios a personas que ya interactuaron contigo de alguna forma. Es generalmente mucho más efectivo y barato que advertising a audiencias frías porque ya conocen tu marca.
+            </div>
+            <div class="lesson-text">
+                <strong>Por qué remarketing es superior:</strong><br><br>
+                - Las personas necesitan ver tu marca 7-12 veces antes de comprar<br>
+                - Remarketing acelera ese proceso<br>
+                - Costs pueden ser 50-80% menores que prospecting<br>
+                - Tasa de conversión significativamente mayor
+            </div>
+            <div class="lesson-text">
+                <strong>Secuencia de remarketing típica:</strong><br><br>
+                <strong>Visitantes de web (calientes):</strong> Si visitaron tu página de pricing pero no compraron, muéstrales ads con urgencia, testimonials, o oferta.<br><br>
+                <strong>Abandonadores de carrito:</strong> Si añadieron al carrito pero no compraron, ads específicos recuperando ese carrito.<br><br>
+                <strong>Engagers de redes:</strong> Si interactuaron con tu contenido, muéstrales ads de producto/servicio.<br><br>
+                <strong>Clientes anteriores:</strong> Para upsells, cross-sells, o productos complementarios.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p>1. María visita tu web, mira 3 páginas, sale sin comprar.<br>
+                2. En las siguientes semanas, ve tu ad en Instagram: "María, aún tienes tiempo. Usa código EXTRA10 para 10% extra."<br>
+                3. María hace clic, pero aún duda.<br>
+                4.第二 semana: otro ad con testimonios de clientes similares a ella.<br>
+                5. María compra. Sin remarketing, probablemente habría olvidado tu marca.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Solo fazer prospecting y no hacer remarketing. Estás pagando por mostrar ads a personas que nunca han oído de ti, cuando podrías nurture a quienes ya mostraron interés por una fracción del costo. La combinación ideal: prospecting para nuevos leads + remarketing para convertir los existentes.</p>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="prevLesson()">← Anterior</button>
+            <button class="nav-btn next" onclick="nextLesson()">Siguiente →</button>
+        </div>
+    </div>
+
+    <footer class="footer"><p>&copy; 2026 Seven App</p></footer>
+
+    <div id="paywallOverlay" class="paywall-overlay" style="display:none;">
+        <div class="paywall-box">
+            <div class="icon">🔒</div>
+            <h2>Contenido Bloqueado</h2>
+            <p>Este contenido requiere el curso completo. Desbloquea para acceder a todas las lecciones.</p>
+            <a href="pago.html?course=marketing-digital" class="btn-unlock">💳 Desbloquear por $7 USD</a>
+            <a href="marketing-digital.html" class="back-link">← Volver al curso</a>
+        </div>
+    </div>
+
+    <script>
+        const lessons = 4;
+        let currentLesson = 1;
+        const courseId = 'marketing-digital';
+
+        function updateDisplay() {
+            document.getElementById('count').textContent = currentLesson;
+            document.getElementById('total').textContent = lessons;
+            document.getElementById('progress').style.width = (currentLesson / lessons * 100) + '%';
+            for (let i = 1; i <= lessons; i++) {
+                const card = document.getElementById('lesson' + i);
+                if (card) {
+                    card.style.display = i === currentLesson ? 'block' : 'none';
+                }
+            }
+        }
+
+        function nextLesson() {
+            if (currentLesson < lessons) {
+                currentLesson++;
+                updateDisplay();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                window.location.href = 'mk-7.html';
+            }
+        }
+
+        function prevLesson() {
+            if (currentLesson > 1) {
+                currentLesson--;
+                updateDisplay();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                window.location.href = 'mk-5.html';
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            document.querySelector('.theme-toggle').textContent = isLight ? '☀️' : '🌙';
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+
+        async function checkAccess() {
+            const purchased = JSON.parse(localStorage.getItem('sevenPurchased') || '[]');
+            if (!purchased.includes(courseId)) {
+                document.getElementById('paywallOverlay').style.display = 'flex';
+            }
+        }
+        updateDisplay();
+        checkAccess();
+    </script>
+</body>
+</html>

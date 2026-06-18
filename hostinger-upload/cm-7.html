@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seven App - CM Día 7: Plan de Acción</title>
+    <link rel="icon" href="assets/favicon.png">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --accent-primary: #6366f1;
+            --accent-secondary: #818cf8;
+            --accent-cyan: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border: #2a2a3a;
+        }
+
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            padding-top: 80px;
+            line-height: 1.6;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+        }
+
+        .header-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(18, 18, 26, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+        }
+
+        .header-bar img {
+            height: 35px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .header-bar img:hover {
+            transform: scale(1.1);
+        }
+
+        .theme-toggle, .home-btn {
+            background: var(--bg-tertiary);
+            color: white;
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover, .home-btn:hover {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .day-title {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 20px;
+            background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%);
+            border-radius: 20px;
+            margin-top: 20px;
+        }
+
+        .day-title h1 {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0 0 12px 0;
+            font-size: 32px;
+        }
+
+        .day-title p {
+            color: var(--text-secondary);
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .progress-bar {
+            background: var(--bg-tertiary);
+            height: 8px;
+            border-radius: 4px;
+            margin: 25px 0;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-cyan));
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s ease;
+            border-radius: 4px;
+        }
+
+        .lesson-count {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 14px;
+            margin: 15px 0;
+        }
+
+        .lesson-count span {
+            color: var(--accent-primary);
+            font-weight: 600;
+        }
+
+        .lesson-card {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 35px;
+            margin: 25px 0;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .lesson-card:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15);
+        }
+
+        .lesson-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .lesson-title::before {
+            content: '';
+            width: 4px;
+            height: 28px;
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-cyan));
+            border-radius: 2px;
+        }
+
+        .lesson-text {
+            font-size: 16px;
+            line-height: 1.85;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .lesson-text strong {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .lesson-example {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.05));
+            border-left: 4px solid var(--accent-primary);
+            padding: 24px;
+            margin: 25px 0;
+            border-radius: 0 16px 16px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lesson-example::before {
+            content: '💡';
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 24px;
+            opacity: 0.3;
+        }
+
+        .lesson-example-title {
+            color: var(--accent-primary);
+            font-weight: 700;
+            margin-bottom: 12px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .lesson-example p {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 15px;
+            line-height: 1.75;
+        }
+
+        .lesson-warning {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.05));
+            border-left: 4px solid var(--warning);
+            padding: 24px;
+            margin: 25px 0;
+            border-radius: 0 16px 16px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lesson-warning::before {
+            content: '⚠️';
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 24px;
+            opacity: 0.3;
+        }
+
+        .lesson-warning-title {
+            color: var(--warning);
+            font-weight: 700;
+            margin-bottom: 12px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .lesson-warning p {
+            margin: 0;
+            color: #fcd34d;
+            font-size: 15px;
+            line-height: 1.75;
+        }
+
+        .lesson-step {
+            display: flex;
+            gap: 16px;
+            margin: 25px 0;
+            padding: 20px;
+            background: var(--bg-tertiary);
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .lesson-step:hover {
+            border-color: var(--accent-primary);
+            transform: translateX(5px);
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+            font-size: 16px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-content h4 {
+            margin: 0 0 8px 0;
+            color: var(--text-primary);
+            font-size: 17px;
+        }
+
+        .step-content p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.65;
+        }
+
+        .vocab-box {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.03));
+            border-radius: 16px;
+            padding: 24px;
+            margin: 25px 0;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .vocab-title {
+            color: var(--success);
+            font-weight: 700;
+            margin-bottom: 16px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .vocab-item {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 12px;
+            font-size: 15px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .vocab-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .vocab-term {
+            color: var(--accent-cyan);
+            font-weight: 600;
+            min-width: 140px;
+            flex-shrink: 0;
+        }
+
+        .vocab-def {
+            color: var(--text-secondary);
+        }
+
+        .checklist-item {
+            display: flex;
+            gap: 16px;
+            margin: 20px 0;
+            align-items: flex-start;
+            padding: 20px;
+            background: var(--bg-tertiary);
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .checklist-item:hover {
+            border-color: var(--accent-primary);
+        }
+
+        .checklist-box {
+            width: 28px;
+            height: 28px;
+            border: 2px solid var(--accent-primary);
+            border-radius: 8px;
+            flex-shrink: 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .checklist-box.checked {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-color: var(--accent-primary);
+        }
+
+        .checklist-text {
+            flex: 1;
+        }
+
+        .checklist-text h4 {
+            margin: 0 0 8px 0;
+            color: var(--text-primary);
+            font-size: 17px;
+        }
+
+        .checklist-text p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            gap: 15px;
+        }
+
+        .nav-btn {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            padding: 14px 28px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            flex: 1;
+            text-align: center;
+        }
+
+        .nav-btn:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent-primary);
+        }
+
+        .nav-btn.next {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            color: white;
+        }
+
+        .nav-btn.next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 14px;
+            border-top: 1px solid var(--border);
+            margin-top: 60px;
+        }
+
+        .paywall-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(10,10,15,0.95); z-index:1000; display:flex; align-items:center; justify-content:center; }
+        .paywall-box { background:var(--bg-secondary); border:1px solid var(--border); border-radius:20px; padding:40px; text-align:center; max-width:400px; margin:20px; }
+        .paywall-box .icon { font-size:64px; margin-bottom:16px; }
+        .paywall-box h2 { color:var(--accent-primary); margin-bottom:12px; }
+        .paywall-box p { color:var(--text-secondary); margin-bottom:24px; }
+        .paywall-box .btn-unlock { display:inline-block; background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary)); color:white; padding:14px 32px; border-radius:10px; text-decoration:none; font-weight:600; }
+        .paywall-box .back-link { display:block; margin-top:16px; color:var(--text-muted); text-decoration:none; }
+
+        body.light-mode {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+        }
+
+        body.light-mode .lesson-card {
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .lesson-card {
+                padding: 25px 20px;
+                border-radius: 16px;
+            }
+            
+            .day-title h1 {
+                font-size: 26px;
+            }
+            
+            .nav-buttons {
+                flex-direction: column;
+            }
+            
+            .nav-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <img src="assets/logo.png" onclick="window.location.href='index.html'" alt="Seven App">
+        <div style="display: flex; gap: 10px;">
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            <a href="community-manager.html" class="home-btn">← Volver</a>
+            <a href="index.html" class="home-btn">🏠 Inicio</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="day-title">
+            <h1>Tu Plan de Acción como CM</h1>
+            <p>7 días de aprendizaje: Hora de aplicar</p>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+        <div class="lesson-count">Lección <span id="count">1</span> de <span id="total">3</span></div>
+
+        <div class="lesson-card" id="lesson1">
+            <div class="lesson-title">Tu Checklist de Lanzamiento Inmediato</div>
+            <div class="lesson-text">
+                Si has completado los días 1-6, ahora tienes el conocimiento. Pero el conocimiento sin acción es inútil. Este checklist es tu guía paso a paso para implementar TODO lo que aprendiste.
+            </div>
+            <div class="checklist-item">
+                <div class="checklist-box" onclick="this.classList.toggle('checked')"></div>
+                <div class="checklist-text">
+                    <h4>Optimiza tu perfil profesional</h4>
+                    <p>Foto clara, bio con propuesta de valor, headline.keyword-rich, enlaces completos.</p>
+                </div>
+            </div>
+            <div class="checklist-item">
+                <div class="checklist-box" onclick="this.classList.toggle('checked')"></div>
+                <div class="checklist-text">
+                    <h4>Define tu estrategia de contenido</h4>
+                    <p>3 pilares de contenido, ratio 80/20, formatos que usarás (Reels + Carruseles + Stories).</p>
+                </div>
+            </div>
+            <div class="checklist-item">
+                <div class="checklist-box" onclick="this.classList.toggle('checked')"></div>
+                <div class="checklist-text">
+                    <h4>Configura tu stack de herramientas</h4>
+                    <p>Canva + CapCut + Notion + Meta Business Suite. Domina UNA antes de añadir más.</p>
+                </div>
+            </div>
+            <div class="checklist-item">
+                <div class="checklist-box" onclick="this.classList.toggle('checked')"></div>
+                <div class="checklist-text">
+                    <h4>Crea tu primer batch de contenido</h4>
+                    <p>Graba/edita 5-7 posts de una vez. Programa la semana completa.</p>
+                </div>
+            </div>
+            <div class="checklist-item">
+                <div class="checklist-box" onclick="this.classList.toggle('checked')"></div>
+                <div class="checklist-text">
+                    <h4>Define 3 KPIs principales</h4>
+                    <p>Ejemplo: Engagement rate >3%, Alcance >10k semanal, Traffic a web >200/mes.</p>
+                </div>
+            </div>
+            <div class="checklist-item">
+                <div class="checklist-box" onclick="this.classList.toggle('checked')"></div>
+                <div class="checklist-text">
+                    <h4>Investiga hashtags de tu nicho</h4>
+                    <p>10-15 hashtags específicos que usarás. No genéricos.</p>
+                </div>
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">Recuerda</div>
+                <p>Este checklist no es "siguiente semana". Es HOY. Elige una tarea, hazla ahora mismo. Mañana será otra. En una semana habrás implementado todo.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson2">
+            <div class="lesson-title">Rutina diaria del CM efectivo</div>
+            <div class="lesson-text">
+                La diferencia entre CMs amateurs y profesionales no es solo habilidad, es sistema. Los CMs profesionales tienen rutinas que maximizan su productividad y mantienen la consistencia sin burnout.
+            </div>
+            <div class="lesson-text">
+                <strong>Por la mañana (30 min):</strong><br>
+                1. Revisar notificaciones: comentarios, DMs, menciones<br>
+                2. Responder mensajes pendientes<br>
+                3. Quick glance a métricas (no deep dive)<br>
+                4. Aprobar/comentar en contenido programado si necesitas<br><br>
+                <strong>Durante el día según necesidad:</strong><br>
+                - Engage con contenido de otros (networking)<br>
+                - Respond to comments on your posts<br>
+                - Monitor for brand mentions or relevant conversations<br><br>
+                <strong>Semanal (2-3 horas):</strong><br>
+                - Deep dive en métricas: qué funcionó, qué no<br>
+                - Batch creating: graba/edita contenido nuevo<br>
+                - Planificar contenido de la siguiente semana<br>
+                - Research: trends, competitors, nuevos formatos<br>
+                - Actualizar bank de ideas
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">Error común</div>
+                <p>Pasar 4 horas al día en redes sociales sin estructura. Esto no es trabajo productivo; es procrastinación disfrazada. Establece tiempos específicos y stick to them. Las redes sociales son herramienta de trabajo, no todo tu trabajo.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson3">
+            <div class="lesson-title">Errores fatales que debes evitar</div>
+            <div class="lesson-text">
+                Hemos cubierto mucho en estos 7 días, pero hay errores que pueden destruir todo tu trabajo. Conócelos para evitarlos desde el día uno.
+            </div>
+            <div class="lesson-text">
+                <strong>Error #1: Comprar seguidores o engagement:</strong><br>
+                Instagram detecta cuentas fake. Si tu engagement no corresponde a tu cantidad de seguidores, el algoritmo te penaliza. Además, seguidores fake nunca comprarán ni interactuarán. Tiempo y dinero desperdiciado.<br><br>
+                <strong>Error #2: Copiar contenido de otros:</strong><br>
+                No copies captions, no reutilices trends de la misma forma exacta, no robes ideas sin crédito. Además de ser unethical, el contenido copiado no se siente authentic. La gente nota cuando algo es genérico vs genuino.<br><br>
+                <strong>Error #3: No responder a comentarios y DMs:</strong><br>
+                Tu comunidad es tu activo más valioso. Ignorarla es como tirar dinero a la basura. Cada comentario es una oportunidad de conexión. Responde siempre.<br><br>
+                <strong>Error #4: Cambiar de estrategia cada semana:</strong><br>
+                El marketing digital toma tiempo. Necesitas 2-3 meses para ver resultados de una estrategia consistente. Cambiar constantemente significa nunca дать una oportunidad real a nada.<br><br>
+                <strong>Error #5: Medir solo vanity metrics:</strong><br>
+                Si solo miras "seguidores" y "likes", no estás midiendo progreso real. Enfócate en engagement rate, traffic, leads, y conversiones.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">Recursos gratuitos para seguir aprendiendo</div>
+                <p><strong>Blogs:</strong> Social Media Examiner, Buffer Blog, Later Blog<br>
+                <strong>YouTube:</strong> Tutoriales específicos de cada plataforma<br>
+                <strong>Cursos gratis:</strong> Meta Blueprint (certificaciones oficiales de Meta)<br>
+                <strong>Comunidades:</strong> Grupos de Facebook para CMs, Reddit communities<br>
+                <strong> newsletters:</strong> Suscríbete a las mejores del industry para estar actualizado</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">Recordatorio final</div>
+                <p>El mejor curso del mundo no vale nada si no aplicas lo aprendido. Guarda este checklist, revísalo semanalmente, y haz accountability. Tu éxito como CM depende de la acción, no del conocimiento. Ahora ve y hazlo.</p>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="prevLesson()">← Anterior</button>
+            <button class="nav-btn next" onclick="nextLesson()">🏆 Finalizar</button>
+        </div>
+    </div>
+
+    <footer class="footer"><p>© 2026 Seven App</p></footer>
+
+    <div id="paywallOverlay" class="paywall-overlay" style="display:none;">
+        <div class="paywall-box">
+            <div class="icon">🔒</div>
+            <h2>Contenido Bloqueado</h2>
+            <p>Este contenido requiere el curso completo.</p>
+            <a href="pago.html?course=community-manager" class="btn-unlock">💳 Desbloquear por $7 USD</a>
+            <a href="community-manager.html" class="back-link">← Volver al curso</a>
+        </div>
+    </div>
+
+    <script>
+        const lessons = 3;
+        let currentLesson = 1;
+        const courseId = 'community-manager';
+
+        function updateDisplay() {
+            document.getElementById('count').textContent = currentLesson;
+            document.getElementById('total').textContent = lessons;
+            document.getElementById('progress').style.width = (currentLesson / lessons * 100) + '%';
+            for (let i = 1; i <= lessons; i++) {
+                const card = document.getElementById('lesson' + i);
+                if (card) {
+                    card.style.display = i === currentLesson ? 'block' : 'none';
+                }
+            }
+        }
+
+        function nextLesson() {
+            if (currentLesson < lessons) {
+                currentLesson++;
+                updateDisplay();
+                window.scrollTo({ top:0, behavior: 'smooth' });
+            } else {
+                window.location.href = 'community-manager.html';
+            }
+        }
+
+        function prevLesson() {
+            if (currentLesson > 1) {
+                currentLesson--;
+                updateDisplay();
+                window.scrollTo({ top:0, behavior: 'smooth' });
+            } else {
+                window.location.href = 'cm-6.html';
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            document.querySelector('.theme-toggle').textContent = isLight ? '☀️' : '🌙';
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+
+        async function checkAccess() {
+            const purchased = JSON.parse(localStorage.getItem('sevenPurchased') || '[]');
+            if (!purchased.includes(courseId)) {
+                document.getElementById('paywallOverlay').style.display = 'flex';
+            }
+        }
+        updateDisplay();
+        checkAccess();
+    </script>
+</body>
+</html>

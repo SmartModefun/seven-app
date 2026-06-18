@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seven App - MK Día 4: Google Ads</title>
+    <link rel="icon" href="assets/favicon.png">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --accent-primary: #6366f1;
+            --accent-secondary: #818cf8;
+            --accent-cyan: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border: #2a2a3a;
+        }
+        body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); margin: 0; padding: 0; padding-top: 80px; line-height: 1.6; position: relative; }
+        body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 20% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 70%); pointer-events: none; z-index: -1; }
+        h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; }
+        .header-bar { position: fixed; top: 0; left: 0; right: 0; background: rgba(18, 18, 26, 0.95); backdrop-filter: blur(20px); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); z-index: 100; }
+        .header-bar img { height: 35px; cursor: pointer; transition: transform 0.3s ease; }
+        .header-bar img:hover { transform: scale(1.1); }
+        .theme-toggle, .home-btn { background: var(--bg-tertiary); color: white; border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; cursor: pointer; text-decoration: none; font-size: 14px; transition: all 0.3s ease; }
+        .theme-toggle:hover, .home-btn:hover { background: var(--accent-primary); border-color: var(--accent-primary); }
+        .container { max-width: 720px; margin: 0 auto; padding: 20px; }
+        .day-title { text-align: center; margin-bottom: 40px; padding: 40px 20px; background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%); border-radius: 20px; margin-top: 20px; }
+        .day-title h1 { background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0 0 12px 0; font-size: 32px; }
+        .day-title p { color: var(--text-secondary); margin: 0; font-size: 18px; }
+        .progress-bar { background: var(--bg-tertiary); height: 8px; border-radius: 4px; margin: 25px 0; overflow: hidden; border: 1px solid var(--border); }
+        .progress-fill { background: linear-gradient(90deg, var(--accent-primary), var(--accent-cyan)); height: 100%; width: 0%; transition: width 0.4s ease; border-radius: 4px; }
+        .lesson-count { text-align: center; color: var(--text-muted); font-size: 14px; margin: 15px 0; }
+        .lesson-count span { color: var(--accent-primary); font-weight: 600; }
+        .lesson-card { background: var(--bg-secondary); border-radius: 20px; padding: 35px; margin: 25px 0; border: 1px solid var(--border); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2); transition: all 0.3s ease; }
+        .lesson-card:hover { border-color: var(--accent-primary); box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15); }
+        .lesson-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; color: var(--accent-cyan); display: flex; align-items: center; gap: 12px; }
+        .lesson-title::before { content: ''; width: 4px; height: 28px; background: linear-gradient(180deg, var(--accent-primary), var(--accent-cyan)); border-radius: 2px; }
+        .lesson-text { font-size: 16px; line-height: 1.85; color: var(--text-secondary); margin-bottom: 20px; }
+        .lesson-text strong { color: var(--success); font-weight: 600; }
+        .lesson-example { background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.05)); border-left: 4px solid var(--accent-primary); padding: 24px; margin: 25px 0; border-radius: 0 16px 16px 0; position: relative; overflow: hidden; }
+        .lesson-example::before { content: '💡'; position: absolute; top: 12px; right: 16px; font-size: 24px; opacity: 0.3; }
+        .lesson-example-title { color: var(--accent-primary); font-weight: 700; margin-bottom: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .lesson-example p { margin: 0; color: var(--text-primary); font-size: 15px; line-height: 1.75; }
+        .lesson-warning { background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.05)); border-left: 4px solid var(--warning); padding: 24px; margin: 25px 0; border-radius: 0 16px 16px 0; position: relative; overflow: hidden; }
+        .lesson-warning::before { content: '⚠️'; position: absolute; top: 12px; right: 16px; font-size: 24px; opacity: 0.3; }
+        .lesson-warning-title { color: var(--warning); font-weight: 700; margin-bottom: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .lesson-warning p { margin: 0; color: #fcd34d; font-size: 15px; line-height: 1.75; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 40px; gap: 15px; }
+        .nav-btn { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); padding: 14px 28px; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: 500; text-decoration: none; transition: all 0.3s ease; flex: 1; text-align: center; }
+        .nav-btn:hover { background: var(--bg-secondary); border-color: var(--accent-primary); }
+        .nav-btn.next { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); border: none; color: white; }
+        .nav-btn.next:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4); }
+        .footer { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 14px; border-top: 1px solid var(--border); margin-top: 60px; }
+        .paywall-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(10,10,15,0.95); z-index:1000; display:flex; align-items:center; justify-content:center; }
+        .paywall-box { background:var(--bg-secondary); border:1px solid var(--border); border-radius:20px; padding:40px; text-align:center; max-width:400px; margin:20px; }
+        .paywall-box .icon { font-size:64px; margin-bottom:16px; }
+        .paywall-box h2 { color:var(--accent-primary); margin-bottom:12px; }
+        .paywall-box p { color:var(--text-secondary); margin-bottom:24px; }
+        .paywall-box .btn-unlock { display:inline-block; background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary)); color:white; padding:14px 32px; border-radius:10px; text-decoration:none; font-weight:600; }
+        .paywall-box .back-link { display:block; margin-top:16px; color:var(--text-muted); text-decoration:none; }
+        body.light-mode { --bg-primary: #f8fafc; --bg-secondary: #ffffff; --bg-tertiary: #f1f5f9; --text-primary: #0f172a; --text-secondary: #475569; --text-muted: #94a3b8; --border: #e2e8f0; }
+        body.light-mode .lesson-card { box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08); }
+        @media (max-width: 600px) { .container { padding: 15px; } .lesson-card { padding: 25px 20px; border-radius: 16px; } .day-title h1 { font-size: 26px; } .nav-buttons { flex-direction: column; } .nav-btn { width: 100%; } }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <img src="assets/logo.png" onclick="window.location.href='index.html'" alt="Seven App">
+        <div style="display: flex; gap: 10px;">
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            <a href="marketing-digital.html" class="home-btn">← Volver</a>
+            <a href="index.html" class="home-btn">🏠 Inicio</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="day-title">
+            <h1>Google Ads: Publicidad de Pago</h1>
+            <p>Tráfico inmediato y medible</p>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+        <div class="lesson-count">Lección <span id="count">1</span> de <span id="total">4</span></div>
+
+        <div class="lesson-card" id="lesson1">
+            <div class="lesson-title">Tipos de campañas en Google Ads</div>
+            <div class="lesson-text">
+                Google Ads ofrece múltiples tipos de campañas, cada una con un propósito diferente. Elegir el tipo correcto depende de tus objetivos: quieres generar conciencia de marca, tráfico, leads, o ventas directas.
+            </div>
+            <div class="lesson-text">
+                <strong>1. Search Ads (Búsqueda):</strong><br>
+                Los anuncios de texto que aparecen cuando alguien busca en Google. Son los más efectivos para intención alta: personas buscando activamente una solución.<br>
+                Ejemplo: Buscas "mejor laptop para diseño" y ves anuncios de tiendas.<br><br>
+                <strong>2. Display Ads (Display/Gráficos):</strong><br>
+                Banners visuales que aparecen en millones de websites de la red de Google. Efectivos para brand awareness y remarketing.<br>
+                Ejemplo: Ves un banner de Nike en una noticia.<br><br>
+                <strong>3. Shopping Ads (Shopping):</strong><br>
+                Anuncios de productos con foto, precio y descripción. Aparecen cuando buscas productos.<br>
+                Ejemplo: Ves imágenes de productos específicos cuando buscas "tenis Nike".<br><br>
+                <strong>4. Video Ads (YouTube):</strong><br>
+                Anuncios en YouTube antes o durante videos. Skippable after 5 seconds, o no-skippable.<br>
+                Ejemplo: Ves 15 segundos de un anuncio antes de un video de YouTube.<br><br>
+                <strong>5. Performance Max:</strong><br>
+                newer tipo que usa machine learning para optimizar conversión en todos los canales de Google.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p>Tienes una tienda de zapatos online:<br>
+                - Search Ads: Cuando alguien busca "comprar zapatos Nike online"<br>
+                - Shopping Ads: Fotos de tus zapatos con precios en resultados de Google Shopping<br>
+                - Display Ads: Banners mostrando tu marca mientras navegan internet<br>
+                - YouTube Ads: Video de 15 segundos mostrando tu nuevo modelo</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Usar el tipo de campaña incorrecto para el objetivo. Si quieres ventas directas, usa Shopping o Search con landing pages optimizadas. No uses Display si quieres conversión directa; úsalo para brand awareness y remarketing.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson2">
+            <div class="lesson-title">Cómo estructurar una campaña efectiva</div>
+            <div class="lesson-text">
+                La estructura de tu cuenta de Google Ads afecta directamente tu rendimiento y costos. Una estructura bien organizada te permite control granular sobre bids, presupuestos, y rendimiento.
+            </div>
+            <div class="lesson-text">
+                <strong>Jerarquía de Google Ads:</strong><br><br>
+                <strong>Cuenta → Campañas → Grupos de anuncios → Anuncios</strong><br><br>
+                <strong>Campañas:</strong> Cada campaña tiene su propio presupuesto y objetivo. Separa por tipo de producto, servicio, o geografía.<br><br>
+                <strong>Grupos de anuncios:</strong> Dentro de cada campaña, agrupar keywords relacionadas con anuncios relevantes. Un grupo de anuncios = un tema = anuncios específicos para ese tema.<br><br>
+                <strong>Anuncios:</strong> Debes tener mínimo 2-3 variantes de anuncio por grupo para que Google pueda hacer A/B testing automático.
+            </div>
+            <div class="lesson-text">
+                <strong>Ejemplo de estructura:</strong><br><br>
+                <strong>Campaña: Zapatos Nike</strong><br>
+                - Grupo: Zapatillas running → Anuncios específicos para running<br>
+                - Grupo: Zapatillas casual → Anuncios específicos para casual<br>
+                - Grupo: Outlet/Descuentos → Anuncios con precios<br>
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p>NO hagas esto: Una campaña con 500 keywords y UN solo anuncio genérico.<br><br>
+                HAZ esto: 5 campañas, cada una con 3-5 grupos de anuncios, cada grupo con anuncios específicos para esas keywords. Resultado: más relevance = mayor Quality Score = menor CPC.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Crear UNA campaña gigante con miles de keywords y esperar resultados. La relevancia es TODO en Google Ads. Keywords similares en grupos separados con anuncios específicos funcionan mejor que todo junto.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson3">
+            <div class="lesson-title">Keywords: Cómo elegir y organizar</div>
+            <div class="lesson-text">
+                Las keywords son el corazón de Search Ads. Elegir las keywords correctas y match types apropiados determina si tus anuncios se muestran a las personas correctas.
+            </div>
+            <div class="lesson-text">
+                <strong>Tipos de coincidencia (Match Types):</strong><br><br>
+                <strong>Broad Match:</strong> Tu anuncio puede aparecer para búsquedas relacionadas. Mayor alcance pero menor relevancia. Ejemplo: keyword "zapatos rojos" podría mostrar para "comprar zapatos"<br><br>
+                <strong>Phrase Match:</strong> Tu anuncio aparece si la búsqueda contiene tu keyword en orden. Ejemplo: "zapatos rojos" podría mostrar para "comprar zapatos rojos online"<br><br>
+                <strong>Exact Match:</strong> Tu anuncio aparece solo para búsquedas idénticas o muy similares. Mayor precisión. Ejemplo: [zapatos rojos] solo mostraría para "zapatos rojos" o variaciones cercanas
+            </div>
+            <div class="lesson-text">
+                <strong>Negative keywords (palabras negativas):</strong><br>
+                Keywords para las que NO quieres que aparezcan tus anuncios. Crucial para evitar clicks irrelevantes y desperdiciar presupuesto.<br><br>
+                Ejemplo: Vendes laptops expensive. Agregas como negativa: "barato", "segunda mano", "usado". Así no pagas por búsquedas que no te interesa atraer.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p>Vendes cursos de marketing online.<br>
+                Keywords: +"marketing digital" +"curso" -gratis -pdf -youtube<br><br>
+                Esto dice: Muestra mi anuncio para búsquedas que contengan "marketing digital" Y "curso" pero NO cuando tengan "gratis", "pdf", o "youtube". Así atraes personas dispuestas a pagar.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>No agregar negative keywords. Sin ellas, tu anuncio se muestra para búsquedas irrelevantes, consumes presupuesto en clicks que nunca convertirán, y Google aprende que tu cuenta no es relevante. Revisa regularmente qué búsquedas generaron clicks y añade negativas.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson4">
+            <div class="lesson-title">Quality Score: Cómo reducir tu costo por clic</div>
+            <div class="lesson-text">
+                El Quality Score es una calificación de 1-10 que Google asigna a cada keyword basada en qué tan relevante es tu anuncio y landing page para la búsqueda. Afecta directamente tu CPC y posición del anuncio.
+            </div>
+            <div class="lesson-text">
+                <strong>Por qué importa el Quality Score:</strong><br><br>
+                - Quality Score 10: Puedes estar en posición 1 pagando menos<br>
+                - Quality Score 4: Necesitas pagar mucho más para la misma posición<br><br>
+                <strong>Cómo se calcula:</strong><br>
+                1. CTR histórico del anuncio<br>
+                2. Relevancia del anuncio para la keyword<br>
+                3. Experiencia en la landing page
+            </div>
+            <div class="lesson-text">
+                <strong>Cómo mejorar tu Quality Score:</strong><br><br>
+                <strong>1. Keywords más específicas:</strong> No "café", sino "café de especialidad Colombia"<br><br>
+                <strong>2. Anuncios más relevantes:</strong> Incluir la keyword en el título y description<br><br>
+                <strong>3. Landing pages dedicadas:</strong> Cada grupo de anuncios debe llevar a una página específica que prometa lo que el anuncio dice<br><br>
+                <strong>4. Extensions:</strong> Usar todas las extensiones disponibles (sitelinks, callouts, structured snippets)
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p>Keyword: "cursos marketing digital"<br>
+                <strong>❌ Anuncio malo:</strong> Título: "Marketing Digital", Descripción: "Aprende todo sobre marketing. Inscríbete hoy."<br>
+                <strong>✅ Anuncio optimizado:</strong> Título: "Cursos de Marketing Digital | Certificados", Descripción: "4 semanas, proyectos reales, mentoría 1:1. 85% employment rate. Inscripción abierta."<br>
+                El segundo anuncio tiene la keyword + benefit claro = mayor CTR = mejor Quality Score = menor CPC.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Ignorar el Quality Score y solo enfocarse en pujar más alto. Puedes pagar $10 por clic con Quality Score 3, o $2 por clic con Quality Score 10 para la misma posición. Foforce en relevancia, no solo en dinero.</p>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="prevLesson()">← Anterior</button>
+            <button class="nav-btn next" onclick="nextLesson()">Siguiente →</button>
+        </div>
+    </div>
+
+    <footer class="footer"><p>&copy; 2026 Seven App</p></footer>
+
+    <div id="paywallOverlay" class="paywall-overlay" style="display:none;">
+        <div class="paywall-box">
+            <div class="icon">🔒</div>
+            <h2>Contenido Bloqueado</h2>
+            <p>Este contenido requiere el curso completo. Desbloquea para acceder a todas las lecciones.</p>
+            <a href="pago.html?course=marketing-digital" class="btn-unlock">💳 Desbloquear por $7 USD</a>
+            <a href="marketing-digital.html" class="back-link">← Volver al curso</a>
+        </div>
+    </div>
+
+    <script>
+        const lessons = 4;
+        let currentLesson = 1;
+        const courseId = 'marketing-digital';
+
+        function updateDisplay() {
+            document.getElementById('count').textContent = currentLesson;
+            document.getElementById('total').textContent = lessons;
+            document.getElementById('progress').style.width = (currentLesson / lessons * 100) + '%';
+            for (let i = 1; i <= lessons; i++) {
+                const card = document.getElementById('lesson' + i);
+                if (card) {
+                    card.style.display = i === currentLesson ? 'block' : 'none';
+                }
+            }
+        }
+
+        function nextLesson() {
+            if (currentLesson < lessons) {
+                currentLesson++;
+                updateDisplay();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                window.location.href = 'mk-5.html';
+            }
+        }
+
+        function prevLesson() {
+            if (currentLesson > 1) {
+                currentLesson--;
+                updateDisplay();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                window.location.href = 'mk-3.html';
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            document.querySelector('.theme-toggle').textContent = isLight ? '☀️' : '🌙';
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+
+        async function checkAccess() {
+            const purchased = JSON.parse(localStorage.getItem('sevenPurchased') || '[]');
+            if (!purchased.includes(courseId)) {
+                document.getElementById('paywallOverlay').style.display = 'flex';
+            }
+        }
+        updateDisplay();
+        checkAccess();
+    </script>
+</body>
+</html>

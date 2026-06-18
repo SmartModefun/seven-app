@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seven App - EC Día 1: Fundamentos del E-commerce</title>
+    <link rel="icon" href="assets/favicon.png">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --accent-primary: #6366f1;
+            --accent-secondary: #818cf8;
+            --accent-cyan: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border: #2a2a3a;
+        }
+
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            padding-top: 80px;
+            line-height: 1.6;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+        }
+
+        .header-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(18, 18, 26, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+        }
+
+        .header-bar img {
+            height: 35px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .header-bar img:hover {
+            transform: scale(1.1);
+        }
+
+        .theme-toggle, .home-btn {
+            background: var(--bg-tertiary);
+            color: white;
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover, .home-btn:hover {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .day-title {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 20px;
+            background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%);
+            border-radius: 20px;
+            margin-top: 20px;
+        }
+
+        .day-title h1 {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0 0 12px 0;
+            font-size: 32px;
+        }
+
+        .day-title p {
+            color: var(--text-secondary);
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .progress-bar {
+            background: var(--bg-tertiary);
+            height: 8px;
+            border-radius: 4px;
+            margin: 25px 0;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-cyan));
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s ease;
+            border-radius: 4px;
+        }
+
+        .lesson-count {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 14px;
+            margin: 15px 0;
+        }
+
+        .lesson-count span {
+            color: var(--accent-primary);
+            font-weight: 600;
+        }
+
+        .lesson-card {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 35px;
+            margin: 25px 0;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .lesson-card:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15);
+        }
+
+        .lesson-card.free-preview {
+            border-color: var(--success);
+        }
+
+        .free-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--success), #059669);
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .lesson-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .lesson-title::before {
+            content: '';
+            width: 4px;
+            height: 28px;
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-cyan));
+            border-radius: 2px;
+        }
+
+        .lesson-text {
+            font-size: 16px;
+            line-height: 1.85;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .lesson-text strong {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .lesson-example {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.05));
+            border-left: 4px solid var(--accent-primary);
+            padding: 24px;
+            margin: 25px 0;
+            border-radius: 0 16px 16px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lesson-example::before {
+            content: '💡';
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 24px;
+            opacity: 0.3;
+        }
+
+        .lesson-example-title {
+            color: var(--accent-primary);
+            font-weight: 700;
+            margin-bottom: 12px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .lesson-example p {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 15px;
+            line-height: 1.75;
+        }
+
+        .lesson-warning {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.05));
+            border-left: 4px solid var(--warning);
+            padding: 24px;
+            margin: 25px 0;
+            border-radius: 0 16px 16px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lesson-warning::before {
+            content: '⚠️';
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 24px;
+            opacity: 0.3;
+        }
+
+        .lesson-warning-title {
+            color: var(--warning);
+            font-weight: 700;
+            margin-bottom: 12px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .lesson-warning p {
+            margin: 0;
+            color: #fcd34d;
+            font-size: 15px;
+            line-height: 1.75;
+        }
+
+        .lesson-step {
+            display: flex;
+            gap: 16px;
+            margin: 25px 0;
+            padding: 20px;
+            background: var(--bg-tertiary);
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .lesson-step:hover {
+            border-color: var(--accent-primary);
+            transform: translateX(5px);
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+            font-size: 16px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-content h4 {
+            margin: 0 0 8px 0;
+            color: var(--text-primary);
+            font-size: 17px;
+        }
+
+        .step-content p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.65;
+        }
+
+        .vocab-box {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.03));
+            border-radius: 16px;
+            padding: 24px;
+            margin: 25px 0;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .vocab-title {
+            color: var(--success);
+            font-weight: 700;
+            margin-bottom: 16px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .vocab-item {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 12px;
+            font-size: 15px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .vocab-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .vocab-term {
+            color: var(--accent-cyan);
+            font-weight: 600;
+            min-width: 140px;
+            flex-shrink: 0;
+        }
+
+        .vocab-def {
+            color: var(--text-secondary);
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            gap: 15px;
+        }
+
+        .nav-btn {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            padding: 14px 28px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            flex: 1;
+            text-align: center;
+        }
+
+        .nav-btn:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent-primary);
+        }
+
+        .nav-btn.next {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            color: white;
+        }
+
+        .nav-btn.next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 14px;
+            border-top: 1px solid var(--border);
+            margin-top: 60px;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(6, 182, 212, 0.1));
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .highlight-box .number {
+            font-size: 36px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .highlight-box .label {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        /* Light Mode */
+        body.light-mode {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+        }
+
+        body.light-mode .lesson-card {
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .lesson-card {
+                padding: 25px 20px;
+                border-radius: 16px;
+            }
+            
+            .day-title h1 {
+                font-size: 26px;
+            }
+            
+            .nav-buttons {
+                flex-direction: column;
+            }
+            
+            .nav-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <img src="assets/logo.png" onclick="window.location.href='index.html'" alt="Seven App">
+        <div style="display: flex; gap: 10px;">
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            <a href="ecommerce.html" class="home-btn">← Volver</a>
+            <a href="index.html" class="home-btn">🏠 Inicio</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="day-title">
+            <h1>Día 1: Fundamentos del E-commerce</h1>
+            <p>Todo lo que necesitas saber antes de vender online</p>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+        <div class="lesson-count">Lección <span id="count">1</span> de <span id="total">1</span></div>
+
+        <div class="lesson-card free-preview" id="lesson1">
+            <div class="free-badge">📚 Contenido Gratuito - Día 1</div>
+            <div class="lesson-title">¿Qué es el E-commerce y por qué ahora?</div>
+            <div class="lesson-text">
+                El <strong>e-commerce</strong> es simplemente la compra y venta de productos o servicios a través de internet. Pero no te dejes engañar por su aparente simplicidad. Detrás de cada tienda online exitosa hay estrategia, psicología y mucho trabajo bien hecho.
+            </div>
+            <div class="lesson-text">
+                Para 2026, las ventas globales por internet superan los <strong>6 billones de dólares anuales</strong>. En Latinoamérica, el crecimiento ha sido explosivo: países como México, Brasil y Colombia han visto incrementos de más del 30% año contra año. Esto significa una oportunidad enorme para quienes se preparen correctamente.
+            </div>
+            <div class="lesson-text">
+                La diferencia fundamental entre vender online y tener una tienda física no es solo el medio. Es la capacidad de <strong>escalar sin límites geográficos</strong>, automatizar procesos, y medir cada decisión con datos precisos. Una tienda física depende de quién pase por la calle. Una tienda online puede ser encontrada por alguien a miles de kilómetros que busca exactamente lo que tú vendes.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">Ejemplo práctico</div>
+                <p>Imagina una emprendedora que vende mermeladas artesanales en su ciudad. Con una tienda física, depende de los clientes del barrio. Con una tienda online, puede enviar a cualquier parte del país. Su mercado potencial pasa de 10,000 personas a millones. Todo con una inversión inicial menor que un alquiler.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">Error común</div>
+                <p>Mucha gente cree que basta con "subir fotos de productos" para que las ventas lleguen solas. Esto es falso. Tu tienda competirá con miles de otras. La diferencia la hacen tu propuesta de valor, conocimiento del cliente y estrategia de marketing.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson2">
+            <div class="lesson-title">Modelos de negocio online</div>
+            <div class="lesson-text">
+                No todos los e-commerce son iguales. Elegir el modelo correcto marcará tu camino:
+            </div>
+            <div class="lesson-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h4>Dropshipping</h4>
+                    <p>Vendes productos sin tener inventario. Cuando un cliente compra, tú compras al proveedor y él envía directamente. Ventaja: no necesitas capital para stock. Desventaja: menor control sobre calidad y envíos.</p>
+                </div>
+            </div>
+            <div class="lesson-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h4>Inventario Propio</h4>
+                    <p>Compras productos al por mayor, los almacenas y envías tú. Requiere más capital inicial pero te da control total sobre el producto, packing y experiencia del cliente.</p>
+                </div>
+            </div>
+            <div class="lesson-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h4>Print on Demand</h4>
+                    <p>Diseñas, y solo cuando alguien compra, se imprime y envía. Sin riesgo de inventario. Ideal para artistas e ilustradores.</p>
+                </div>
+            </div>
+            <div class="lesson-step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <h4>Productos Digitales</h4>
+                    <p>Vendes plantillas, cursos, consultorías. No hay envíos físicos, márgenes del 80-90% y puedes escalar infinitamente.</p>
+                </div>
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">Ejemplo práctico</div>
+                <p>Con $500 para empezar: Dropshipping o Print on Demand. Con $5,000: inventario propio para construir marca a largo plazo. Con experiencia en un tema: productos digitales para ingresos recurrentes.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson3">
+            <div class="lesson-title">Estructura de costos que debes conocer</div>
+            <div class="lesson-text">
+                Uno de los errores más frecuentes es <strong>no calcular los costos reales</strong> antes de lanzar. Creen que solo necesitan el producto, ponen un precio, y se sorprenden cuando no ganan dinero.
+            </div>
+            <div class="vocab-box">
+                <div class="vocab-title">📊 Tipos de costos</div>
+                <div class="vocab-item"><span class="vocab-term">Costos fijos</span><span class="vocab-def">Plataforma ($29-79/mes), dominio ($12-15/año), hosting ($20-50/mes). Existen aunque no vendas nada.</span></div>
+                <div class="vocab-item"><span class="vocab-term">Costos variables</span><span class="vocab-def">Producto, comisiones pasarela (2-4%), costos de envío, empaquetado. Aumentan con cada venta.</span></div>
+                <div class="vocab-item"><span class="vocab-term">CAC</span><span class="vocab-def">Costo de adquisición de cliente. Cuánto gastas en marketing para conseguir una venta.</span></div>
+                <div class="vocab-item"><span class="vocab-term">Margen bruto</span><span class="vocab-def">Para físico: 50-70%. Para digital: 80-90%.</span></div>
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">Ejemplo práctico</div>
+                <p>Vendes un producto a $50. Costo del producto: $20. Envío: $5. Pasarela: $1.50. Plataforma: $1. Ads por cliente: $10. Total: $37.50. Ganancia: $12.50. ¿Vale la pena? Depende de tu LTV (valor del cliente).</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">Error común</div>
+                <p>Olvidar los costos de devolución. En e-commerce, las devoluciones pueden representar del 5% al 30%. Si no lo contemplas, pueden destruir tu rentabilidad. Calcula mínimo 10% de devolución.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson4">
+            <div class="lesson-title">Legislación y consideraciones legales</div>
+            <div class="lesson-text">
+                Vender online no te exime de cumplir la ley. Dependiendo de tu país y tipo de producto, hay regulaciones que debes seguir.
+            </div>
+            <div class="lesson-text">
+                La <strong>protección al consumidor</strong> es fundamental: en la mayoría de países latinoamericanos, el comprador tiene derecho a retracto (devolver en X días sin explicaciones).
+            </div>
+            <div class="vocab-box">
+                <div class="vocab-title">📋 Documentos esenciales</div>
+                <div class="vocab-item"><span class="vocab-term">Política de devolución</span><span class="vocab-def">Define claramente cómo y cuándo aceptan devoluciones.</span></div>
+                <div class="vocab-item"><span class="vocab-term">Términos y condiciones</span><span class="vocab-def">Reglas de uso de tu tienda.</span></div>
+                <div class="vocab-item"><span class="vocab-term">Política de privacidad</span><span class="vocab-def">Cómo manejas los datos de clientes (RGPD, leyes locales).</span></div>
+                <div class="vocab-item"><span class="vocab-term">Facturación</span><span class="vocab-def">Cada país tiene sus reglas (SAT en México, DIAN en Colombia, etc.).</span></div>
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">Ejemplo práctico</div>
+                <p>En Brasil, si operas con CPF de persona física, hay límites de facturación. En México, el SAT requiere facturación electrónica para ventas B2B. Consulta con un contador especializado ($100-300) antes de lanzar.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">Error común</div>
+                <p>Ignorar el tema legal pensando "soy pequeño, a mí no me van a buscar". Pero plataformas como Shopify o Mercado Shops pueden suspender tu tienda si detectan prácticas irregulares.</p>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="ecommerce.html" class="nav-btn">← Volver al curso</a>
+            <a onclick="goToNext()" class="nav-btn next">💳 Desbloquear Día 2 →</a>
+        </div>
+
+        <div class="lesson-example" style="margin-top: 30px; text-align: center;">
+            <p style="color: var(--text-secondary); font-size: 14px;">
+                🎉 Este es el contenido gratuito del Día 1. <br>
+                <strong style="color: var(--accent-primary);">Desbloquea los días 2-7</strong> para continuar aprendiendo.
+            </p>
+        </div>
+    </div>
+
+    <footer class="footer"><p>© 2026 Seven App</p></footer>
+
+    <script>
+        const lessons = 1;
+        let currentLesson = 1;
+
+        function updateDisplay() {
+            document.getElementById('count').textContent = currentLesson;
+            document.getElementById('total').textContent = lessons;
+            document.getElementById('progress').style.width = (currentLesson / lessons * 100) + '%';
+            
+            for (let i = 1; i <= lessons; i++) {
+                const card = document.getElementById('lesson' + i);
+                if (card) {
+                    card.style.display = i === currentLesson ? 'block' : 'none';
+                }
+            }
+        }
+
+        function goToNext() {
+            const purchased = JSON.parse(localStorage.getItem('sevenPurchased') || '[]');
+            if (purchased.includes('ecommerce')) {
+                window.location.href = 'ec-2.html';
+            } else {
+                window.location.href = 'pago.html?course=ecommerce';
+            }
+        }
+
+        function nextLesson() {
+            if (currentLesson < lessons) {
+                currentLesson++;
+                updateDisplay();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                goToNext();
+            }
+        }
+
+        function prevLesson() {
+            if (currentLesson > 1) {
+                currentLesson--;
+                updateDisplay();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            document.querySelector('.theme-toggle').textContent = isLight ? '☀️' : '🌙';
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+
+        if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
+        updateDisplay();
+    </script>
+</body>
+</html>

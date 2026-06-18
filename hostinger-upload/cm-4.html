@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seven App - CM Día 4: LinkedIn</title>
+    <link rel="icon" href="assets/favicon.png">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg-primary: #0a0a0f; --bg-secondary: #12121a; --bg-tertiary: #1a1a25; --accent-primary: #6366f1; --accent-secondary: #818cf8; --accent-cyan: #06b6d4; --success: #10b981; --warning: #f59e0b; --text-primary: #ffffff; --text-secondary: #9ca3af; --text-muted: #6b7280; --border: #2a2a3a; }
+        body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); margin: 0; padding: 0; padding-top: 80px; line-height: 1.6; position: relative; }
+        body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 20% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 70%); pointer-events: none; z-index: -1; }
+        h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; }
+        .header-bar { position: fixed; top: 0; left: 0; right: 0; background: rgba(18, 18, 26, 0.95); backdrop-filter: blur(20px); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); z-index: 100; }
+        .header-bar img { height: 35px; cursor: pointer; transition: transform 0.3s ease; }
+        .header-bar img:hover { transform: scale(1.1); }
+        .theme-toggle, .home-btn { background: var(--bg-tertiary); color: white; border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; cursor: pointer; text-decoration: none; font-size: 14px; transition: all 0.3s ease; }
+        .theme-toggle:hover, .home-btn:hover { background: var(--accent-primary); border-color: var(--accent-primary); }
+        .container { max-width: 720px; margin: 0 auto; padding: 20px; }
+        .day-title { text-align: center; margin-bottom: 40px; padding: 40px 20px; background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%); border-radius: 20px; margin-top: 20px; }
+        .day-title h1 { background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0 0 12px 0; font-size: 32px; }
+        .day-title p { color: var(--text-secondary); margin: 0; font-size: 18px; }
+        .progress-bar { background: var(--bg-tertiary); height: 8px; border-radius: 4px; margin: 25px 0; overflow: hidden; border: 1px solid var(--border); }
+        .progress-fill { background: linear-gradient(90deg, var(--accent-primary), var(--accent-cyan)); height: 100%; width: 0%; transition: width 0.4s ease; border-radius: 4px; }
+        .lesson-count { text-align: center; color: var(--text-muted); font-size: 14px; margin: 15px 0; }
+        .lesson-count span { color: var(--accent-primary); font-weight: 600; }
+        .lesson-card { background: var(--bg-secondary); border-radius: 20px; padding: 35px; margin: 25px 0; border: 1px solid var(--border); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2); transition: all 0.3s ease; }
+        .lesson-card:hover { border-color: var(--accent-primary); box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15); }
+        .lesson-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; color: var(--accent-cyan); display: flex; align-items: center; gap: 12px; }
+        .lesson-title::before { content: ''; width: 4px; height: 28px; background: linear-gradient(180deg, var(--accent-primary), var(--accent-cyan)); border-radius: 2px; }
+        .lesson-text { font-size: 16px; line-height: 1.85; color: var(--text-secondary); margin-bottom: 20px; }
+        .lesson-text strong { color: var(--success); font-weight: 600; }
+        .lesson-example { background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.05)); border-left: 4px solid var(--accent-primary); padding: 24px; margin: 25px 0; border-radius: 0 16px 16px 0; position: relative; overflow: hidden; }
+        .lesson-example::before { content: '💡'; position: absolute; top: 12px; right: 16px; font-size: 24px; opacity: 0.3; }
+        .lesson-example-title { color: var(--accent-primary); font-weight: 700; margin-bottom: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .lesson-example p { margin: 0; color: var(--text-primary); font-size: 15px; line-height: 1.75; }
+        .lesson-warning { background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.05)); border-left: 4px solid var(--warning); padding: 24px; margin: 25px 0; border-radius: 0 16px 16px 0; position: relative; overflow: hidden; }
+        .lesson-warning::before { content: '⚠️'; position: absolute; top: 12px; right: 16px; font-size: 24px; opacity: 0.3; }
+        .lesson-warning-title { color: var(--warning); font-weight: 700; margin-bottom: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .lesson-warning p { margin: 0; color: #fcd34d; font-size: 15px; line-height: 1.75; }
+        .lesson-step { display: flex; gap: 16px; margin: 25px 0; padding: 20px; background: var(--bg-tertiary); border-radius: 14px; border: 1px solid var(--border); transition: all 0.3s ease; }
+        .lesson-step:hover { border-color: var(--accent-primary); transform: translateX(5px); }
+        .step-number { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: white; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; font-size: 16px; font-family: 'Outfit', sans-serif; }
+        .step-content { flex: 1; }
+        .step-content h4 { margin: 0 0 8px 0; color: var(--text-primary); font-size: 17px; }
+        .step-content p { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.65; }
+        .vocab-box { background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.03)); border-radius: 16px; padding: 24px; margin: 25px 0; border: 1px solid rgba(16, 185, 129, 0.2); }
+        .vocab-title { color: var(--success); font-weight: 700; margin-bottom: 16px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+        .vocab-item { display: flex; gap: 15px; margin-bottom: 12px; font-size: 15px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .vocab-item:last-child { border-bottom: none; margin-bottom: 0; }
+        .vocab-term { color: var(--accent-cyan); font-weight: 600; min-width: 140px; flex-shrink: 0; }
+        .vocab-def { color: var(--text-secondary); }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 40px; gap: 15px; }
+        .nav-btn { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); padding: 14px 28px; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: 500; text-decoration: none; transition: all 0.3s ease; flex: 1; text-align: center; }
+        .nav-btn:hover { background: var(--bg-secondary); border-color: var(--accent-primary); }
+        .nav-btn.next { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); border: none; color: white; }
+        .nav-btn.next:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4); }
+        .footer { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 14px; border-top: 1px solid var(--border); margin-top: 60px; }
+        .paywall-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(10,10,15,0.95); z-index:1000; display:flex; align-items:center; justify-content:center; }
+        .paywall-box { background:var(--bg-secondary); border:1px solid var(--border); border-radius:20px; padding:40px; text-align:center; max-width:400px; margin:20px; }
+        .paywall-box .icon { font-size:64px; margin-bottom:16px; }
+        .paywall-box h2 { color:var(--accent-primary); margin-bottom:12px; }
+        .paywall-box p { color:var(--text-secondary); margin-bottom:24px; }
+        .paywall-box .btn-unlock { display:inline-block; background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary)); color:white; padding:14px 32px; border-radius:10px; text-decoration:none; font-weight:600; }
+        .paywall-box .back-link { display:block; margin-top:16px; color:var(--text-muted); text-decoration:none; }
+        body.light-mode { --bg-primary: #f8fafc; --bg-secondary: #ffffff; --bg-tertiary: #f1f5f9; --text-primary: #0f172a; --text-secondary: #475569; --text-muted: #94a3b8; --border: #e2e8f0; }
+        body.light-mode .lesson-card { box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08); }
+        @media (max-width: 600px) { .container { padding: 15px; } .lesson-card { padding: 25px 20px; border-radius: 16px; } .day-title h1 { font-size: 26px; } .nav-buttons { flex-direction: column; } .nav-btn { width: 100%; } }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <img src="assets/logo.png" onclick="window.location.href='index.html'" alt="Seven App">
+        <div style="display: flex; gap: 10px;">
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            <a href="community-manager.html" class="home-btn">← Volver</a>
+            <a href="index.html" class="home-btn">🏠 Inicio</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="day-title">
+            <h1>LinkedIn para Community Managers</h1>
+            <p>La plataforma profesional que genera negocios</p>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+        <div class="lesson-count">Lección <span id="count">1</span> de <span id="total">4</span></div>
+
+        <div class="lesson-card" id="lesson1">
+            <div class="lesson-title">LinkedIn vs otras redes: ¿Por qué es diferente?</div>
+            <div class="lesson-text">
+                LinkedIn es la única red social donde el contexto profesional lo permea todo. Aquí no publicas memes random o videos de bailes (bueno, algunos sí, pero generalmente no es bien recibido). LinkedIn es donde construyes tu reputación profesional, generas leads B2B, y te posicionas como experto en tu industria.
+            </div>
+            <div class="lesson-text">
+                <strong>Las diferencias clave con otras plataformas:</strong><br><br>
+                <strong>1. Intención diferente:</strong> La gente entra a LinkedIn con mentalidad profesional. No están buscando entretenimiento casual; están abiertos a aprender, networking, y oportunidades de negocio. Esto significa que tu contenido puede ser más "serio" y aún generar engagement.<br><br>
+                <strong>2. Ciclo de decisión más largo:</strong> En B2B, las decisiones toman semanas o meses. LinkedIn te permite nurture relationships a lo largo del tiempo hasta que el prospecto esté listo para comprar.<br><br>
+                <strong>3. Tipos de contenido más largos:</strong> Los artículos en LinkedIn pueden ser de 1,500+ palabras y generan mucho engagement. Los posts con stories largas son bienvenidos. Hay espacio para profundidad que otras redes no permiten.<br><br>
+                <strong>4. Networking directo:</strong> A diferencia de Instagram donde "seguir" es casi automático, en LinkedIn conectarte requiere aceptación mutua. Esto hace que cada conexión tenga más valor.
+            </div>
+            <div class="lesson-text">
+                <strong>Para quién es LinkedIn:</strong> LinkedIn es ESSENCIAL si trabajas en B2B, vendes servicios profesionales (consultoría, coaching, agencias), buscas empleo, o quieres posicionarte como thought leader en tu industria. Es MENOS relevante para negocios puramente B2C con productos de consumo masivo.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p>Un CM que maneja una agencia de marketing puede usar LinkedIn para: publicar tips semanales sobre estrategia digital (posicionamiento), conectar con决策 makers de empresas que necesitan sus servicios (networking), compartir casos de éxito de clientes (prueba social), y publicar artículos largos sobre tendencias de la industria (thought leadership). Todo esto genera leads calificados sin costo de publicidad.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Tratar LinkedIn como LinkedIn. No publiques el mismo contenido que en Instagram. Aquí la gente valora insights profesionales, experiencias genuinas, y contenido que les ayude en su carrera o negocio. Los posts excesivamente "venderosos" sin valor real generan rechazo.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson2">
+            <div class="lesson-title">Cómo escribir posts profesionales que generan engagement</div>
+            <div class="lesson-text">
+                El formato de posts en LinkedIn ha evolucionado. Ya no basta con compartir un link o un logro corporativo. Los posts que generan engagement en LinkedIn siguen patrones específicos que conectan con la mentalidad profesional del lector.
+            </div>
+            <div class="lesson-text">
+                <strong>La fórmula del post perfecto en LinkedIn:</strong><br><br>
+                <strong>1. Hook en la primera línea:</strong> Las primeras 1-2 líneas aparecen antes del "ver más". Usa una pregunta, dato impactante, o declaración que genere curiosidad. Evita saludos genéricos.<br><br>
+                <strong>2. La historia personal:</strong> LinkedIn premia la vulnerabilidad y autenticidad. Comparte experiencias reales: fracasos, aprendizajes, momentos difíciles y cómo los superaste. Esto genera conexión emocional.<br><br>
+                <strong>3. El insight有价值:</strong> Después de la historia, extrae la lección. ¿Qué puede aplicar el lector? Da tips concretos, frameworks, o consejos prácticos.<br><br>
+                <strong>4. Call to action suave:</strong> Termina con una pregunta que invite al comentario, o un "si te fue útil, compártelo". Evita CTAs agresivos tipo "CONTÁCTAME AHORA".
+            </div>
+            <div class="lesson-text">
+                <strong>Longitud óptima:</strong> Posts de 150-300 palabras funcionan muy bien. Son lo suficientemente largos para desarrollar una idea pero no tanto como para abrumar. Para artículos (documents), 800-1,500 palabras es el sweet spot.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p><strong>Título hook:</strong> "Perdí un cliente de $5,000 porque cometí este error..."<br><br>
+                <strong>Desarrollo:</strong> Cuenta la historia del error (sin nombrar al cliente). Explica qué pasó, por qué falló, y qué aprendiste.<br><br>
+                <strong>Insight:</strong> "La lección: siempre documenta los acuerdos por escrito, aunque confíes en la persona. No importa cuánto tiempo llevas trabajando con alguien."<br><br>
+                <strong>CTA:</strong> "¿Alguna vez perdiste un cliente por no tener todo por escrito? Cuéntame tu experiencia 👇"</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Solo publicar "logros" sin contexto. "Fui promovido a Director de Marketing" es aburrido. "¿Cómo pasé de Associate a Director en 3 años?" es interesante. Explica el proceso, las habilidades, y las decisiones que te llevaron ahí. La gente quiere aprender de tu experiencia, no solo ver tus títulos.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson3">
+            <div class="lesson-title">Networking efectivo: Cómo construir tu red estratégicamente</div>
+            <div class="lesson-text">
+                En LinkedIn, tu red ES tu moneda. No se trata de tener 10,000 conexiones al azar; se trata de tener las conexiones correctas que pueden ayudarte a crecer profesionalmente, generar negocio, o abrir puertas. Aquí te enseño cómo hacer networking que realmente funciona.
+            </div>
+            <div class="lesson-text">
+                <strong>Estrategia de conexión proactiva:</strong><br><br>
+                <strong>1. Conecta con propósito:</strong> Antes de enviar una solicitud, pregúntate: ¿Por qué quiero conectar con esta persona? ¿Qué valor puedo ofrecer? ¿Qué quiero aprender? Las solicitudes genéricas de "me gustaría conectar" son ignoradas.<br><br>
+                <strong>2. Personaliza cada solicitud:</strong> "Me gustaría conectar" no funciona. En cambio: "Vi tu post sobre estrategia de contenido y estoy trabajando en un proyecto similar. Me encantaría exchange ideas." Específico y valioso.<br><br>
+                <strong>3. Interactúa antes de conectar:</strong> Comenta genuinamente en los posts de alguien antes de enviarle solicitud. Cuando reciben la notificación de tu comentario Y tu solicitud, la combinación es más memorable.<br><br>
+                <strong>4. Mantén las conversaciones:</strong> Conectar es solo el primer paso. Para que una conexión tenga valor, necesitas mantenerla. Comenta regularmente en el contenido de tus conexiones. Envía mensajes ocasionalmente con artículos o comentarios relevantes.
+            </div>
+            <div class="lesson-text">
+                <strong>Grupos de LinkedIn:</strong> Únete a grupos de tu industria. Son espacios donde puedes interactuar con personas que comparten tus intereses profesionales. Participa activamente en discusiones, comparte tu expertise, y las conexiones vendrán naturalmente.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p>Quieres conectar con el CMO de una empresa tech. Pasos: 1) Comenta genuinamente en 2-3 de sus posts recientes. 2) Después de que te vea interactuando, envía solicitud personalizada mencionando algo específico de sus posts. 3) Cuando acepte, envía mensaje de seguimiento: "Gracias por aceptar. Tu perspectiva sobre [tema específico] fue particularmente interesante porque [tu perspectiva o experiencia relacionada]". No pidas nada; solo construye relación.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Spam de solicitudes de conexión con mensajes que langsung a ventas inmediatas. "Hola, soy [nombre], ofrezco servicios de marketing, ¿necesitas ayuda?" = inmediatamente rechazado. Las relaciones se construyen ANTES de vender. Usa LinkedIn para dar valor primero, vender después.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson4">
+            <div class="lesson-title">Errores que matan tu perfil de LinkedIn</div>
+            <div class="lesson-text">
+                Tu perfil de LinkedIn es tu carta de presentación digital. Los errores aquí pueden costarte oportunidades de trabajo, clientes, o conexiones valiosas. Vamos a identificar los más comunes para que puedas evitarlos.
+            </div>
+            <div class="lesson-text">
+                <strong>Error #1: Headline genérico:</strong> "CM Senior en Empresa XYZ" no dice nada. Tu headline aparece en cada búsqueda y recomendación. Debe incluir: qué haces + para quién + el resultado que generas.<br><br>
+                <strong>Buen ejemplo:</strong> "Community Manager | Ayudo marcas B2B a crecer en redes sociales | +500k alcance mensual gestionado"<br><br>
+                <strong>Error #2: Sin foto profesional:</strong> Una foto con buena iluminación, fondo neutro, y vestimenta profesional. No selfies de fiesta, no fotos de hace 10 años, no fotos con otras personas cortadas. Tu foto es tu primera impresión.<br><br>
+                <strong>Error #3: Banner genérico:</strong> El banner de LinkedIn es un espacio de marca que la mayoría ignora. Úsalo para comunicar tu propuesta de valor o mostrar tu expertise visualmente.<br><br>
+                <strong>Error #4: About vacío o copiado:</strong> La sección About es donde vendes tu propuesta de valor. Debe estar escrita en primera persona, contar tu historia, y terminar con un CTA claro (cómo contactarte).<br><br>
+                <strong>Error #5: No mostrar resultados:</strong> Tu experiencia debe incluir métricas específicas: "aumenté engagement 150%", "gestioné comunidad de 50k miembros", "generé leads valued at $200k annually". Los números hablan más que las palabras.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p><strong>❌ About malo:</strong> "Soy CM con experiencia en redes sociales. Me gustan los gatos y viajar."<br><br>
+                <strong>✅ About efectivo:</strong> "Ayudo a emprendedores digitales a construir presencia en redes sociales que convierte seguidores en clientes.
+
+Hace 3 años empecé desde cero. Hoy gestiono +5 cuentas con alcance combinado de 2 millones de personas.
+
+Lo que me diferencia: combino data analysis con creatividad para crear estrategias que realmente funcionan.
+
+¿Tu marca lista para crecer? Escríbeme."</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>No actualizar tu perfil regularmente. LinkedIn premia la actividad. Si tu última publicación fue hace 2 años, LinkedIn te considera "inactivo" y te muestra menos. Mantén tu perfil vivo con publicaciones regulares y actualizaciones de tus logros.</p>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="prevLesson()">← Anterior</button>
+            <button class="nav-btn next" onclick="nextLesson()">Siguiente →</button>
+        </div>
+    </div>
+
+    <footer class="footer"><p>&copy; 2026 Seven App</p></footer>
+
+    <div id="paywallOverlay" class="paywall-overlay" style="display:none;">
+        <div class="paywall-box">
+            <div class="icon">🔒</div>
+            <h2>Contenido Bloqueado</h2>
+            <p>Este contenido requiere el curso completo. Desbloquea para acceder a todas las lecciones.</p>
+            <a href="pago.html?course=community-manager" class="btn-unlock">💳 Desbloquear por $7 USD</a>
+            <a href="community-manager.html" class="back-link">← Volver al curso</a>
+        </div>
+    </div>
+
+    <script>
+        const lessons = 4;
+        let currentLesson = 1;
+        const courseId = 'community-manager';
+
+        function updateDisplay() {
+            document.getElementById('count').textContent = currentLesson;
+            document.getElementById('total').textContent = lessons;
+            document.getElementById('progress').style.width = (currentLesson / lessons * 100) + '%';
+            for (let i = 1; i <= lessons; i++) {
+                const card = document.getElementById('lesson' + i);
+                if (card) {
+                    card.style.display = i === currentLesson ? 'block' : 'none';
+                }
+            }
+        }
+
+        function nextLesson() {
+            if (currentLesson < lessons) {
+                currentLesson++;
+                updateDisplay();
+                window.scrollTo({ top:0, behavior: 'smooth' });
+            } else {
+                window.location.href = 'cm-5.html';
+            }
+        }
+
+        function prevLesson() {
+            if (currentLesson > 1) {
+                currentLesson--;
+                updateDisplay();
+                window.scrollTo({ top:0, behavior: 'smooth' });
+            } else {
+                window.location.href = 'cm-3.html';
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            document.querySelector('.theme-toggle').textContent = isLight ? '☀️' : '🌙';
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+
+        async function checkAccess() {
+            const purchased = JSON.parse(localStorage.getItem('sevenPurchased') || '[]');
+            if (!purchased.includes(courseId)) {
+                document.getElementById('paywallOverlay').style.display = 'flex';
+            }
+        }
+        updateDisplay();
+        checkAccess();
+    </script>
+</body>
+</html>

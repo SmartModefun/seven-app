@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Desbloquear curso | Seven App</title>
+
+<link rel="stylesheet" href="style.css">
+
+<style>
+
+.unlock-container{
+max-width:700px;
+margin:auto;
+padding:40px;
+text-align:center;
+}
+
+.unlock-card{
+background:white;
+border-radius:20px;
+padding:40px;
+box-shadow:0 10px 30px rgba(0,0,0,0.1);
+}
+
+.unlock-title{
+font-size:32px;
+margin-bottom:20px;
+}
+
+.unlock-list{
+text-align:left;
+margin:30px auto;
+max-width:400px;
+font-size:18px;
+}
+
+.price{
+font-size:40px;
+color:#2ecc71;
+margin:20px 0;
+}
+
+.pay-button{
+background:#ffcc00;
+padding:18px 40px;
+border:none;
+border-radius:10px;
+font-size:18px;
+cursor:pointer;
+}
+
+.pay-button:hover{
+opacity:0.9;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="unlock-container">
+
+<div class="unlock-card">
+
+<h1 class="unlock-title">
+🎉 ¡Terminaste tu primer día!
+</h1>
+
+<p>
+En solo unos minutos ya aprendiste:
+</p>
+
+<div class="unlock-list">
+
+<p>✔ saludar en inglés</p>
+<p>✔ presentarte</p>
+<p>✔ iniciar conversaciones</p>
+
+</div>
+
+<p>
+Imagina lo que podrás hacer en 7 días.
+</p>
+
+<div class="unlock-list">
+
+<p>• pedir direcciones</p>
+<p>• hablar en un restaurante</p>
+<p>• conversar cuando viajas</p>
+<p>• hacer preguntas básicas</p>
+<p>• entender respuestas simples</p>
+
+</div>
+
+</div>
+
+</div>
+
+<footer style="text-align: center; padding: 30px 20px; color: #666; font-size: 14px; border-top: 1px solid #eee; margin-top: 40px;">
+<p>&copy; 2024 Seven App</p>
+<p style="margin-top: 8px;">📧 <a href="mailto:info@seven-app.com" style="color: #4f46e5; text-decoration: none;">info@seven-app.com</a></p>
+</footer>
+
+<h2>Acceso completo</h2>
+
+<div class="price">$7</div>
+
+<button class="pay-button" id="paypalButton">
+Desbloquear curso completo
+</button>
+
+</div>
+
+</div>
+
+<script>
+
+document.getElementById("paypalButton").onclick=function(){
+
+window.location.href="https://www.paypal.com/ncp/payment/NYP8KUKK5TWM8
+"
+
+}
+
+</script>
+
+</body>
+
+</html>

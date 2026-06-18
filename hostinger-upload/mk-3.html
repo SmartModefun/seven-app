@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seven App - MK Día 3: SEO</title>
+    <link rel="icon" href="assets/favicon.png">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --accent-primary: #6366f1;
+            --accent-secondary: #818cf8;
+            --accent-cyan: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border: #2a2a3a;
+        }
+        body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); margin: 0; padding: 0; padding-top: 80px; line-height: 1.6; position: relative; }
+        body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 20% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 70%); pointer-events: none; z-index: -1; }
+        h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; }
+        .header-bar { position: fixed; top: 0; left: 0; right: 0; background: rgba(18, 18, 26, 0.95); backdrop-filter: blur(20px); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); z-index: 100; }
+        .header-bar img { height: 35px; cursor: pointer; transition: transform 0.3s ease; }
+        .header-bar img:hover { transform: scale(1.1); }
+        .theme-toggle, .home-btn { background: var(--bg-tertiary); color: white; border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; cursor: pointer; text-decoration: none; font-size: 14px; transition: all 0.3s ease; }
+        .theme-toggle:hover, .home-btn:hover { background: var(--accent-primary); border-color: var(--accent-primary); }
+        .container { max-width: 720px; margin: 0 auto; padding: 20px; }
+        .day-title { text-align: center; margin-bottom: 40px; padding: 40px 20px; background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%); border-radius: 20px; margin-top: 20px; }
+        .day-title h1 { background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0 0 12px 0; font-size: 32px; }
+        .day-title p { color: var(--text-secondary); margin: 0; font-size: 18px; }
+        .progress-bar { background: var(--bg-tertiary); height: 8px; border-radius: 4px; margin: 25px 0; overflow: hidden; border: 1px solid var(--border); }
+        .progress-fill { background: linear-gradient(90deg, var(--accent-primary), var(--accent-cyan)); height: 100%; width: 0%; transition: width 0.4s ease; border-radius: 4px; }
+        .lesson-count { text-align: center; color: var(--text-muted); font-size: 14px; margin: 15px 0; }
+        .lesson-count span { color: var(--accent-primary); font-weight: 600; }
+        .lesson-card { background: var(--bg-secondary); border-radius: 20px; padding: 35px; margin: 25px 0; border: 1px solid var(--border); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2); transition: all 0.3s ease; }
+        .lesson-card:hover { border-color: var(--accent-primary); box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15); }
+        .lesson-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; color: var(--accent-cyan); display: flex; align-items: center; gap: 12px; }
+        .lesson-title::before { content: ''; width: 4px; height: 28px; background: linear-gradient(180deg, var(--accent-primary), var(--accent-cyan)); border-radius: 2px; }
+        .lesson-text { font-size: 16px; line-height: 1.85; color: var(--text-secondary); margin-bottom: 20px; }
+        .lesson-text strong { color: var(--success); font-weight: 600; }
+        .lesson-example { background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.05)); border-left: 4px solid var(--accent-primary); padding: 24px; margin: 25px 0; border-radius: 0 16px 16px 0; position: relative; overflow: hidden; }
+        .lesson-example::before { content: '💡'; position: absolute; top: 12px; right: 16px; font-size: 24px; opacity: 0.3; }
+        .lesson-example-title { color: var(--accent-primary); font-weight: 700; margin-bottom: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .lesson-example p { margin: 0; color: var(--text-primary); font-size: 15px; line-height: 1.75; }
+        .lesson-warning { background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.05)); border-left: 4px solid var(--warning); padding: 24px; margin: 25px 0; border-radius: 0 16px 16px 0; position: relative; overflow: hidden; }
+        .lesson-warning::before { content: '⚠️'; position: absolute; top: 12px; right: 16px; font-size: 24px; opacity: 0.3; }
+        .lesson-warning-title { color: var(--warning); font-weight: 700; margin-bottom: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .lesson-warning p { margin: 0; color: #fcd34d; font-size: 15px; line-height: 1.75; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 40px; gap: 15px; }
+        .nav-btn { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); padding: 14px 28px; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: 500; text-decoration: none; transition: all 0.3s ease; flex: 1; text-align: center; }
+        .nav-btn:hover { background: var(--bg-secondary); border-color: var(--accent-primary); }
+        .nav-btn.next { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); border: none; color: white; }
+        .nav-btn.next:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4); }
+        .footer { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 14px; border-top: 1px solid var(--border); margin-top: 60px; }
+        .paywall-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(10,10,15,0.95); z-index:1000; display:flex; align-items:center; justify-content:center; }
+        .paywall-box { background:var(--bg-secondary); border:1px solid var(--border); border-radius:20px; padding:40px; text-align:center; max-width:400px; margin:20px; }
+        .paywall-box .icon { font-size:64px; margin-bottom:16px; }
+        .paywall-box h2 { color:var(--accent-primary); margin-bottom:12px; }
+        .paywall-box p { color:var(--text-secondary); margin-bottom:24px; }
+        .paywall-box .btn-unlock { display:inline-block; background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary)); color:white; padding:14px 32px; border-radius:10px; text-decoration:none; font-weight:600; }
+        .paywall-box .back-link { display:block; margin-top:16px; color:var(--text-muted); text-decoration:none; }
+        body.light-mode { --bg-primary: #f8fafc; --bg-secondary: #ffffff; --bg-tertiary: #f1f5f9; --text-primary: #0f172a; --text-secondary: #475569; --text-muted: #94a3b8; --border: #e2e8f0; }
+        body.light-mode .lesson-card { box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08); }
+        @media (max-width: 600px) { .container { padding: 15px; } .lesson-card { padding: 25px 20px; border-radius: 16px; } .day-title h1 { font-size: 26px; } .nav-buttons { flex-direction: column; } .nav-btn { width: 100%; } }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <img src="assets/logo.png" onclick="window.location.href='index.html'" alt="Seven App">
+        <div style="display: flex; gap: 10px;">
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            <a href="marketing-digital.html" class="home-btn">← Volver</a>
+            <a href="index.html" class="home-btn">🏠 Inicio</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="day-title">
+            <h1>SEO: Posicionamiento en Buscadores</h1>
+            <p>Tráfico orgánico gratis que trabaja 24/7</p>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+        <div class="lesson-count">Lección <span id="count">1</span> de <span id="total">4</span></div>
+
+        <div class="lesson-card" id="lesson1">
+            <div class="lesson-title">Cómo funciona Google: El algoritmo básico</div>
+            <div class="lesson-text">
+                Para entender SEO, primero necesitas entender cómo Google decide qué mostrar cuando alguien busca algo. Google quiere mostrar los MEJORES resultados para cada búsqueda. Su algoritmo evalúa cientos de factores para determinar qué páginas son más relevantes y autoritativas.
+            </div>
+            <div class="lesson-text">
+                <strong>Los 3 pilares de SEO según Google:</strong><br><br>
+                <strong>1. Relevancia:</strong> ¿Tu contenido responde la pregunta del usuario? Si alguien busca "cómo hacer pan", Google busca páginas que hablen sobre hacer pan, no sobre hacer pasta.<br><br>
+                <strong>2. Autoridad:</strong> ¿Otros sitios web confían en tu contenido? Si páginas importantes enlazan a tu sitio, Google interpreta que tu contenido es valioso. Los backlinks son votos de confianza.<br><br>
+                <strong>3. Experiencia de usuario:</strong> ¿Tu página es rápida, fácil de navegar, y mobile-friendly? Google trackea métricas de usuario como tiempo en página, tasa de rebote, y clicks.
+            </div>
+            <div class="lesson-text">
+                <strong>Por qué SEO importa:</strong><br>
+                El primer resultado de Google recibe aproximadamente el 32% de los clicks. Los primeros 3 resultados se llevan el 75%. Si estás en página 2 o más abajo, prácticamente no existes. SEO te permite ocupar posiciones que generan tráfico constante y gratis.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p>Si vendes cursos de marketing online y posicionas para "mejor curso marketing digital", el primer resultado puede generar 1,000 visitas mensuales. Si el 2% convierte, son 20 leads mensuales. A $100 por lead, eso es $2,000 en valor mensuales. Todo con tráfico ORGÁNICO que no te cuesta nada.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Pensar que SEO es "escribir para Google". Google es solo el intermediario. Tu audiencia real son humanos. Escribe para humanos primero, optimiza para Google segundo. Contenido spam que no ayuda a nadie eventualmente es penalizado.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson2">
+            <div class="lesson-title">Keywords: La base de todo SEO</div>
+            <div class="lesson-text">
+                Una keyword es la palabra o frase que alguien escribe en Google. Todo SEO empieza con investigación de keywords: descubrir qué buscan tus potenciales clientes y cómo competes para aparecer en esos resultados.
+            </div>
+            <div class="lesson-text">
+                <strong>Tipos de keywords:</strong><br><br>
+                <strong>Short-tail (cola corta):</strong> 1-2 palabras, alto volumen, alta competencia. Ejemplo: "marketing". Difíciles de posicionar, mejor para marcas establecidas.<br><br>
+                <strong>Long-tail (cola larga):</strong> 3+ palabras, menor volumen pero intención más clara. Ejemplo: "mejor curso marketing digital para principiantes". Más fáciles de posicionar, tráfico más calificado.<br><br>
+                <strong>Por intención:</strong><br>
+                - Informacionales: "cómo hacer X" (quieren aprender)<br>
+                - Comerciales: "comparativa de X vs Y" (evaluando opciones)<br>
+                - Transaccionales: "comprar X" (listos para comprar)
+            </div>
+            <div class="lesson-text">
+                <strong>Herramientas de investigación:</strong><br>
+                - Google Autocomplete: Escribe tu keyword y ve las sugerencias<br>
+                - Google Keyword Planner: Volumen de búsqueda real (necesitas cuenta de ads)<br>
+                - Ubersuggest: Alternativa gratis con datos útiles<br>
+                - AnswerThePublic: Preguntas relacionadas
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p>Para una tienda de café:<br>
+                <strong>Short-tail:</strong> "café" (500k búsquedas/mes pero imposible de competir)<br>
+                <strong>Long-tail:</strong> "mejor café de especialidad para espresso casero" (1k búsquedas/mes pero puedo posicionar)<br>
+                <strong>Transaccional:</strong> "comprar café de especialidad online Colombia" (personas listas para comprar)</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Elegir keywords solo por volumen alto sin considerar competencia ni intención. Keywords de alto volumen con 100 sitios compitiendo son casi imposibles de posicionar si tu sitio es nuevo. Empieza con keywords long-tail donde puedes ganar.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson3">
+            <div class="lesson-title">SEO On-Page: Optimización dentro de tu web</div>
+            <div class="lesson-text">
+                SEO On-Page se refiere a todo lo que puedes optimizar DENTRO de tu sitio web para mejorar tu posicionamiento. Es la parte de SEO que controlas directamente.
+            </div>
+            <div class="lesson-text">
+                <strong>Elementos críticos de SEO On-Page:</strong><br><br>
+                <strong>1. Title Tag:</strong> El título que aparece en Google. Debe incluir tu keyword principal y ser atractivo para hacer click. 50-60 caracteres máximo.<br><br>
+                <strong>2. Meta Description:</strong> El resumen bajo el título. Debe entice al click y incluir keyword. 150-160 caracteres.<br><br>
+                <strong>3. Encabezados (H1, H2, H3):</strong> Estructura jerárquica del contenido. Solo un H1 por página, incluir keywords en H2s.<br><br>
+                <strong>4. URL:</strong> URLs cortas y descriptivas. Ejemplo: tudominio.com/mejor-curso-marketing<br><br>
+                <strong>5. Imágenes:</strong> Alt text descriptivo, nombres de archivo relevantes, compresión para velocidad.<br><br>
+                <strong>6. Velocidad de carga:</strong> Google premia sitios rápidos. Comprime imágenes, usa hosting rápido.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p><strong>❌ Title malo:</strong> "Inicio - Tienda de Café XYZ"<br>
+                <strong>✅ Title optimizado:</strong> "Mejor Café de Especialidad en Colombia | Tienda Online"<br><br>
+                <strong>❌ URL mala:</strong> tudominio.com/p=123<br>
+                <strong>✅ URL optimizada:</strong> tudominio.com/cafe-especialidad-colombia</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Ignorar la experiencia móvil. Más del 60% de búsquedas son desde celulares. Si tu sitio no funciona bien en móvil, Google te penalizará. Usa diseño responsive y prueba tu sitio en diferentes dispositivos.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson4">
+            <div class="lesson-title">SEO Off-Page: Cómo construir autoridad</div>
+            <div class="lesson-text">
+                SEO Off-Page se refiere a todo lo que sucede FUERA de tu sitio web para mejorar tu posicionamiento. El factor más importante aquí son los backlinks: enlaces de otras páginas apuntando a la tuya.
+            </div>
+            <div class="lesson-text">
+                <strong>Por qué importan los backlinks:</strong><br>
+                Cada backlink es como un "voto de confianza". Si el New York Times enlaza a tu blog sobre marketing, Google interpreta que tu contenido es tan valioso que incluso medios importantes te consideran worth linking. Esto aumenta tu autoridad.
+            </div>
+            <div class="lesson-text">
+                <strong>Estrategias para conseguir backlinks:</strong><br><br>
+                <strong>1. Guest posting:</strong> Escribir artículos como invitado en blogs de tu industria con enlace a tu sitio.<br><br>
+                <strong>2. Crear contenido que naturalmente se enlaza:</strong> Guías completas, estadísticas originales, herramientas útiles. Contenido tan bueno que otros quieren enlazarlo.<br><br>
+                <strong>3. Broken link building:</strong> Encontrar enlaces rotos en otros sitios y ofrecer tu contenido como reemplazo.<br><br>
+                <strong>4. Outreach:</strong> Contactar directamente a sitios que podrían beneficiarse de tu contenido.<br><br>
+                <strong>5. Redes sociales:</strong> Aunque no son factores directos de SEO, ayudan a distribuir contenido que puede generar backlinks.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p>Creas una guía completa: "Estado del Marketing Digital en LatAm 2024" con estadísticas originales. La compartes en Twitter, LinkedIn, y contactas a bloggers del industry ofreciéndoles usar tus datos. 20 sitios enlazan a tu guía. Tu Domain Authority sube. Páginas que antes posicionabas en posición 5 ahora están en posición 2.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Comprar backlinks o usar redes de enlaces. Google es extremadamente sofisticado detectando esto. Los links artificiales pueden resultar en penalizaciones que destruyen tu posicionamiento. Gana backlinks de forma orgánica creando contenido que genuinamente merece ser enlazado.</p>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="prevLesson()">← Anterior</button>
+            <button class="nav-btn next" onclick="nextLesson()">Siguiente →</button>
+        </div>
+    </div>
+
+    <footer class="footer"><p>&copy; 2026 Seven App</p></footer>
+
+    <div id="paywallOverlay" class="paywall-overlay" style="display:none;">
+        <div class="paywall-box">
+            <div class="icon">🔒</div>
+            <h2>Contenido Bloqueado</h2>
+            <p>Este contenido requiere el curso completo. Desbloquea para acceder a todas las lecciones.</p>
+            <a href="pago.html?course=marketing-digital" class="btn-unlock">💳 Desbloquear por $7 USD</a>
+            <a href="marketing-digital.html" class="back-link">← Volver al curso</a>
+        </div>
+    </div>
+
+    <script>
+        const lessons = 4;
+        let currentLesson = 1;
+        const courseId = 'marketing-digital';
+
+        function updateDisplay() {
+            document.getElementById('count').textContent = currentLesson;
+            document.getElementById('total').textContent = lessons;
+            document.getElementById('progress').style.width = (currentLesson / lessons * 100) + '%';
+            for (let i = 1; i <= lessons; i++) {
+                const card = document.getElementById('lesson' + i);
+                if (card) {
+                    card.style.display = i === currentLesson ? 'block' : 'none';
+                }
+            }
+        }
+
+        function nextLesson() {
+            if (currentLesson < lessons) {
+                currentLesson++;
+                updateDisplay();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                window.location.href = 'mk-4.html';
+            }
+        }
+
+        function prevLesson() {
+            if (currentLesson > 1) {
+                currentLesson--;
+                updateDisplay();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                window.location.href = 'mk-2.html';
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            document.querySelector('.theme-toggle').textContent = isLight ? '☀️' : '🌙';
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+
+        async function checkAccess() {
+            const purchased = JSON.parse(localStorage.getItem('sevenPurchased') || '[]');
+            if (!purchased.includes(courseId)) {
+                document.getElementById('paywallOverlay').style.display = 'flex';
+            }
+        }
+        updateDisplay();
+        checkAccess();
+    </script>
+</body>
+</html>

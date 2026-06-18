@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seven App - CM Día 1: Fundamentos del Community Manager</title>
+    <link rel="icon" href="assets/favicon.png">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background: #0a0a0f; color: #fff; margin: 0; padding: 0; padding-top: 80px; }
+        .container { max-width: 700px; margin: 0 auto; padding: 20px; }
+        .header-bar { position: fixed; top: 0; left: 0; right: 0; background: #12121a; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2a3a; z-index: 100; }
+        .header-bar img { height: 35px; cursor: pointer; }
+        .theme-toggle { background: #334155; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 16px; }
+        .home-btn { background: #334155; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 14px; }
+        .day-title { text-align: center; margin-bottom: 30px; }
+        .day-title h1 { color: #6366f1; margin: 0 0 10px 0; font-size: 28px; }
+        .day-title p { color: #9ca3af; margin: 0; font-size: 16px; }
+        .progress-bar { background: #1e293b; height: 6px; border-radius: 3px; margin: 20px 0; overflow: hidden; }
+        .progress-fill { background: #6366f1; height: 100%; width: 0%; transition: width 0.3s; }
+        .lesson-card { background: #12121a; border-radius: 16px; padding: 30px; margin: 20px 0; border: 1px solid #2a2a3a; }
+        .lesson-title { font-size: 24px; font-weight: bold; margin-bottom: 15px; color: #22d3ee; }
+        .lesson-text { font-size: 16px; line-height: 1.8; color: #e2e8f0; margin-bottom: 20px; }
+        .lesson-text strong { color: #10b981; }
+        .lesson-example { background: #1e293b; border-left: 4px solid #6366f1; padding: 15px 20px; margin: 20px 0; border-radius: 0 10px 10px 0; }
+        .lesson-example-title { color: #6366f1; font-weight: 600; margin-bottom: 8px; font-size: 14px; }
+        .lesson-example p { margin: 0; color: #e2e8f0; font-size: 15px; line-height: 1.6; }
+        .lesson-warning { background: rgba(245, 158, 11, 0.15); border-left: 4px solid #f59e0b; padding: 15px 20px; margin: 20px 0; border-radius: 0 10px 10px 0; }
+        .lesson-warning-title { color: #f59e0b; font-weight: 600; margin-bottom: 8px; font-size: 14px; }
+        .lesson-warning p { margin: 0; color: #fcd34d; font-size: 15px; }
+        .lesson-step { display: flex; gap: 15px; margin: 20px 0; }
+        .step-number { background: #6366f1; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
+        .step-content { flex: 1; }
+        .step-content h4 { margin: 0 0 8px 0; color: #e2e8f0; }
+        .step-content p { margin: 0; color: #94a3b8; font-size: 14px; line-height: 1.6; }
+        .vocab-box { background: #0f172a; border-radius: 12px; padding: 20px; margin: 20px 0; }
+        .vocab-title { color: #10b981; font-weight: 600; margin-bottom: 12px; font-size: 14px; }
+        .vocab-item { display: flex; gap: 10px; margin-bottom: 8px; font-size: 15px; }
+        .vocab-term { color: #22d3ee; font-weight: 500; min-width: 120px; }
+        .vocab-def { color: #94a3b8; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 30px; }
+        .nav-btn { background: #334155; color: white; border: none; padding: 14px 28px; border-radius: 8px; cursor: pointer; font-size: 16px; }
+        .nav-btn:hover { background: #475569; }
+        .nav-btn.next { background: #6366f1; }
+        .nav-btn.next:hover { background: #4f46e5; }
+        .lesson-count { text-align: center; color: #9ca3af; font-size: 14px; margin: 15px 0; }
+        .footer { text-align: center; padding: 30px 20px; color: #6b7280; font-size: 14px; border-top: 1px solid #2a2a3a; margin-top: 40px; }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <img src="assets/logo.png" onclick="window.location.href='index.html'" alt="Seven App">
+        <div style="display: flex; gap: 10px;">
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            <a href="community-manager.html" class="home-btn">← Volver</a>
+            <a href="index.html" class="home-btn">🏠 Inicio</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="day-title">
+            <h1>Día 1: ¿Qué es un Community Manager?</h1>
+            <p>Tu guía completa para entender el rol</p>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+        <div class="lesson-count">Lección <span id="count">1</span> de <span id="total">4</span></div>
+
+        <!-- Lección 1 -->
+        <div class="lesson-card" id="lesson1">
+            <div class="lesson-title">🎯 ¿Qué hace exactamente un Community Manager?</div>
+            <div class="lesson-text">
+                Un <strong>Community Manager (CM)</strong> es la persona responsable de gestionar la presencia de una marca en redes sociales. No solo publica contenido: construye relaciones reales con la audiencia.
+            </div>
+            <div class="lesson-text">
+                Piensa en el CM como el <strong>"voz de la marca"</strong>. Cuando alguien comenta en Instagram, el CM responde. Cuando hay una crisis en redes, el CM es quien maneja la situación. Es el puente entre la marca y las personas.
+            </div>
+            <div class="lesson-text">
+                <strong>Las 3 funciones principales de un CM:</strong>
+            </div>
+            <div class="lesson-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <h4>Escuchar</h4>
+                    <p>Monitorear qué dice la gente sobre la marca, analizar métricas y estar atento a tendencias.</p>
+                </div>
+            </div>
+            <div class="lesson-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <h4>Hablar</h4>
+                    <p>Crear contenido, responder comentarios, generar conversaciones y mantener la comunidad activa.</p>
+                </div>
+            </div>
+            <div class="lesson-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <h4>Analizar</h4>
+                    <p>Medir resultados (engagement, crecimiento, conversiones) y ajustar la estrategia según datos.</p>
+                </div>
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p>Imagina que trabajas para una cafetería. Un cliente escribe "La comida estuvo rica pero el servicio lento". El CM debe: agradecer el feedback positivo, disculparse por la demora, y ofrecer algo para la próxima visita. Eso construye lealtad.</p>
+            </div>
+        </div>
+
+        <!-- Lección 2 -->
+        <div class="lesson-card" id="lesson2">
+            <div class="lesson-title">📱 ¿Qué redes sociales debería manejar un CM?</div>
+            <div class="lesson-text">
+                No todas las redes son para todos los negocios. Un CM moderno debe conocer las características de cada plataforma y elegir dónde está <strong>la audiencia objetivo</strong>.
+            </div>
+            <div class="lesson-text">
+                <strong>Las 4 redes principales:</strong>
+            </div>
+            <div class="lesson-step">
+                <div class="step-number">📸</div>
+                <div class="step-content">
+                    <h4>Instagram</h4>
+                    <p>Ideal para: marcas visuales (moda, comida, viajes, belleza). Formato estrella: Reels. Audiencia principal: 18-35 años.</p>
+                </div>
+            </div>
+            <div class="lesson-step">
+                <div class="step-number">🎵</div>
+                <div class="step-content">
+                    <h4>TikTok</h4>
+                    <p>Ideal para: contenido masivo y viral. Formato estrella: videos de 15-60 segundos. Audiencia: 16-35 años.</p>
+                </div>
+            </div>
+            <div class="lesson-step">
+                <div class="step-number">💼</div>
+                <div class="step-content">
+                    <h4>LinkedIn</h4>
+                    <p>Ideal para: B2B, servicios profesionales, networking. Contenido: tips profesionales, casos de éxito.</p>
+                </div>
+            </div>
+            <div class="lesson-step">
+                <div class="step-number">🐦</div>
+                <div class="step-content">
+                    <h4>Facebook/X</h4>
+                    <p>Facebook: comunidades, grupos, audiencia mayor. X (Twitter): noticias, atención al cliente, opiniones.</p>
+                </div>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>NO intentes estar en todas las redes sociales. Es mejor dominar 1-2 plataformas que hacer malcontento en 5. Empieza con donde está tu audiencia.</p>
+            </div>
+        </div>
+
+        <!-- Lección 3 -->
+        <div class="lesson-card" id="lesson3">
+            <div class="lesson-title">⏰ ¿Cuántas horas trabaja un CM?</div>
+            <div class="lesson-text">
+                Una pregunta frecuente: "¿Cuánto tiempo toma manejar redes sociales?". La respuesta depende de varios factores, pero aquí te doy un estimado realista:
+            </div>
+            <div class="lesson-text">
+                <strong>Rutina diaria de un CM (1-2 marcas):</strong>
+            </div>
+            <div class="lesson-step">
+                <div class="step-number">☀️</div>
+                <div class="step-content">
+                    <h4>Mañana (30-45 min)</h4>
+                    <p>Revisar notificaciones, comentarios overnight, mensajes DM, menciones y menciones de marca.</p>
+                </div>
+            </div>
+            <div class="lesson-step">
+                <div class="step-number">📝</div>
+                <div class="step-content">
+                    <h4>Crear contenido (1-2 horas)</h4>
+                    <p>Diseñar gráficos, grabar videos, escribir captions, crear stories. Esto puede batchearse 1-2 veces por semana.</p>
+                </div>
+            </div>
+            <div class="lesson-step">
+                <div class="step-number">💬</div>
+                <div class="step-content">
+                    <h4>Interactuar (1 hora)</h4>
+                    <p>Responder comentarios, participar en conversaciones, hacer outreach, comentar en cuentas relevantes.</p>
+                </div>
+            </div>
+            <div class="lesson-step">
+                <div class="step-number">📊</div>
+                <div class="step-content">
+                    <h4>Analizar (30 min)</h4>
+                    <p>Revisar métricas del día: engagement, reach, crecimiento. Anotar qué funcionó.</p>
+                </div>
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Tip profesional</div>
+                <p><strong>Total aproximado: 3-4 horas diarias</strong> para manejar 1-2 marcas efectivamente. Si manejas más, considera contratar ayuda o usar herramientas de automatización.</p>
+            </div>
+        </div>
+
+        <!-- Lección 4 -->
+        <div class="lesson-card" id="lesson4">
+            <div class="lesson-title">🛠️ Herramientas esenciales para empezar</div>
+            <div class="lesson-text">
+                No necesitas un presupuesto grande para empezar. Estas herramientas son <strong>gratuitas o muy económicas</strong>:
+            </div>
+            <div class="vocab-box">
+                <div class="vocab-title">📱 Herramientas de diseño (gratuitas)</div>
+                <div class="vocab-item"><span class="vocab-term">Canva</span><span class="vocab-def">Para crear gráficos, stories, posts. Tiene plantillas gratuitas.</span></div>
+                <div class="vocab-item"><span class="vocab-term">CapCut</span><span class="vocab-def">Editor de video gratis con efectos profesionales.</span></div>
+                <div class="vocab-item"><span class="vocab-term">Pinterest</span><span class="vocab-def">Para inspirarte con ideas de diseño y tendencias.</span></div>
+            </div>
+            <div class="vocab-box">
+                <div class="vocab-title">📊 Herramientas de gestión (gratuitas)</div>
+                <div class="vocab-item"><span class="vocab-term">Meta Business Suite</span><span class="vocab-def">Programar posts para Instagram y Facebook.</span></div>
+                <div class="vocab-item"><span class="vocab-term">Notion</span><span class="vocab-def">Para planificar contenido y llevar tu calendario editorial.</span></div>
+                <div class="vocab-item"><span class="vocab-term">Later</span><span class="vocab-def">Visual planner para Instagram (plan gratuito disponible).</span></div>
+            </div>
+            <div class="vocab-box">
+                <div class="vocab-title">📈 Herramientas de análisis</div>
+                <div class="vocab-item"><span class="vocab-term">Instagram Insights</span><span class="vocab-def">Viene integrado en Instagram. Muestra métricas de tu cuenta.</span></div>
+                <div class="vocab-item"><span class="vocab-term">TikTok Analytics</span><span class="vocab-def">Para cuentas Pro. Muestra rendimiento de videos.</span></div>
+                <div class="vocab-item"><span class="vocab-term">Google Analytics</span><span class="vocab-def">Para medir tráfico web desde redes sociales.</span></div>
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Tu kit de inicio</div>
+                <p><strong>Presupuesto: $0</strong><br>
+                • Canva (diseño)<br>
+                • CapCut (video)<br>
+                • Meta Business Suite (programar)<br>
+                • Notion (organización)<br>
+                • Insights nativo (análisis)</p>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="prevLesson()">← Anterior</button>
+            <button class="nav-btn next" onclick="nextLesson()">Siguiente →</button>
+        </div>
+    </div>
+
+    <footer class="footer"><p>&copy; 2026 Seven App</p></footer>
+
+    <script>
+        const lessons = 4;
+        let currentLesson = 1;
+        const courseId = 'community-manager';
+
+        async function checkAccess() {
+            const purchased = JSON.parse(localStorage.getItem('sevenPurchased') || '[]');
+            if (purchased.includes(courseId)) {
+                return;
+            }
+            const user = firebase.auth().currentUser;
+            if (!user) {
+                document.getElementById('paywallOverlay').style.display = 'flex';
+                return;
+            }
+            try {
+                const doc = await db.collection('users').doc(user.uid).get();
+                if (!doc.exists || !doc.data().courses || !doc.data().courses.includes(courseId)) {
+                    document.getElementById('paywallOverlay').style.display = 'flex';
+                }
+            } catch (e) {
+                document.getElementById('paywallOverlay').style.display = 'flex';
+            }
+        }
+
+        function updateDisplay() {
+            document.getElementById('count').textContent = currentLesson;
+            document.getElementById('total').textContent = lessons;
+            document.getElementById('progress').style.width = (currentLesson / lessons * 100) + '%';
+            
+            for (let i = 1; i <= lessons; i++) {
+                const card = document.getElementById('lesson' + i);
+                if (card) {
+                    card.style.display = i === currentLesson ? 'block' : 'none';
+                }
+            }
+        }
+
+        function nextLesson() {
+            if (currentLesson < lessons) {
+                currentLesson++;
+                updateDisplay();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                window.location.href = 'cm-2.html';
+            }
+        }
+
+        function prevLesson() {
+            if (currentLesson > 1) {
+                currentLesson--;
+                updateDisplay();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            document.querySelector('.theme-toggle').textContent = isLight ? '☀️' : '🌙';
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+
+        if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
+        updateDisplay();
+        checkAccess();
+    </script>
+</body>
+</html>

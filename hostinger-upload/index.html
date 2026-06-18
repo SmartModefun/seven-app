@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seven App - Aprende Todo en 7 Días</title>
+    <meta name="description" content="Seven App - Cursos intensivos con método Ramón Campayo. Inglés, Marketing, Community Manager y más.">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="assets/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&amp;family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        .hero-main {
+            min-height: calc(100vh - 70px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px 20px;
+            position: relative;
+        }
+
+        .hero-main .hero-background {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+        }
+
+        .hero-main .hero-content {
+            text-align: center;
+            max-width: 900px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .brand-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--accent-secondary);
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+        }
+
+        .hero-main h1 {
+            font-size: clamp(40px, 8vw, 72px);
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        .hero-main .hero-subtitle {
+            font-size: 20px;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .courses-section {
+            padding: 80px 20px;
+            background: var(--bg-secondary);
+        }
+
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .course-card {
+            background: var(--bg-tertiary);
+            border-radius: 20px;
+            padding: 32px;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .course-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--accent-gradient);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .course-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--accent-primary);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.15);
+        }
+
+        .course-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .course-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+        }
+
+        .course-card h3 {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .course-card p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .course-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .course-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--accent-secondary);
+        }
+
+        .course-status {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .course-status.available {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .course-status.coming-soon {
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--accent-secondary);
+        }
+
+        .course-status.owned {
+            background: rgba(6, 182, 212, 0.2);
+            color: #22d3ee;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: var(--accent-gradient);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .user-menu .btn-primary {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+
+        .auth-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .auth-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-modal.active {
+            display: flex;
+        }
+
+        .auth-modal .auth-box {
+            max-width: 450px;
+        }
+
+        .auth-box {
+            background: var(--bg-secondary);
+            border-radius: 24px;
+            padding: 40px;
+            max-width: 420px;
+            width: 100%;
+            border: 1px solid var(--border);
+            position: relative;
+        }
+
+        .auth-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .auth-box h2 {
+            font-size: 24px;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .auth-box .subtitle {
+            color: var(--text-secondary);
+            text-align: center;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--text-secondary);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+
+        .auth-box .btn-primary {
+            width: 100%;
+            padding: 14px;
+            margin-top: 8px;
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .auth-switch a {
+            color: var(--accent-secondary);
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .auth-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 13px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .auth-error.show {
+            display: block;
+        }
+
+        .features-section {
+            padding: 80px 20px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            text-align: center;
+            padding: 24px;
+        }
+
+        .feature-icon {
+            font-size: 40px;
+            margin-bottom: 16px;
+        }
+
+        .feature-card h3 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <img src="assets/logo.png" class="logo" alt="Seven App" onclick="window.location.href='index.html'">
+            <div id="authArea" class="auth-buttons">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar modo">🌙</button>
+                <button class="btn-secondary" onclick="openAuth('login')">Iniciar Sesión</button>
+                <button class="btn-primary" onclick="openAuth('register')">Registrarse</button>
+            </div>
+            <div id="userArea" class="user-menu" style="display: none;">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar modo">🌙</button>
+                <div class="user-avatar" id="userAvatar" onclick="window.location.href='dashboard.html'"></div>
+                <button class="btn-secondary" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="hero-main">
+        <div class="hero-background">
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+            <div class="orb orb-3"></div>
+        </div>
+        <div class="hero-content">
+            <div class="brand-tag">
+                <span>✨</span>
+                <span>Método Comprobado</span>
+            </div>
+            <h1>Aprende <span class="gradient-text">Todo en 7 Días</span></h1>
+            <p class="hero-subtitle">Método Comprobado</p>
+            <p class="hero-subtitle">Cursos intensivos diseñados para dominar habilidades esenciales en tiempo récord</p>
+        </div>
+    </div>
+
+    <section class="courses-section">
+        <div class="section-header">
+            <h2>Nuestros Cursos</h2>
+            <p>7 días para transformar tu vida profesional</p>
+        </div>
+        <div class="courses-grid" id="coursesGrid">
+        </div>
+    </section>
+
+    <section class="features-section">
+        <div class="section-header">
+            <h2>¿Por qué Seven App?</h2>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <h3>Aprendizaje Rápido</h3>
+                <p>Método optimizado para aprender en solo 7 días</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <h3>Contenido Práctico</h3>
+                <p>Lo que realmente necesitas saber, sin relleno</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📱</div>
+                <h3>Accede Desde Cualquier Lugar</h3>
+                <p>Estudia desde tu móvil o computadora</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💳</div>
+                <h3>Acceso por $7</h3>
+                <p>Cada curso por solo $7 USD</p>
+            </div>
+        </div>
+    </section>
+
+    <div id="authModal" class="auth-modal">
+        <div class="auth-box">
+            <button class="auth-close" onclick="closeAuth()">&times;</button>
+            <h2 id="authTitle">Iniciar Sesión</h2>
+            <p class="subtitle" id="authSubtitle">Accede a tu cuenta Seven App</p>
+            
+            <div id="authError" class="auth-error"></div>
+            
+            <form id="authForm" onsubmit="handleAuth(event)">
+                <div id="nameGroup" class="form-group" style="display: none;">
+                    <label>Nombre de Usuario</label>
+                    <input type="text" id="username" placeholder="Tu nombre de usuario">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="email" placeholder="tu@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="password" placeholder="Mínimo 6 caracteres" required minlength="6">
+                </div>
+                <button type="submit" class="btn-primary" id="authBtn">Iniciar Sesión</button>
+            </form>
+            
+            <p class="auth-switch" id="authSwitchText" style="margin-top: 16px;">
+                <span>¿No tienes cuenta?</span>
+                <a id="authSwitchLink" onclick="toggleAuthMode()">Regístrate</a>
+            </p>
+            
+            <p style="text-align: center; margin-top: 12px;">
+                <a href="#" onclick="event.preventDefault(); showForgotPassword();" style="color: var(--accent-secondary); font-size: 13px; text-decoration: none;">¿Olvidaste tu contraseña?</a>
+            </p>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 Seven App</p>
+        <p style="margin-top: 8px;">📧 <a href="mailto:info@seven-app.com" style="color: #6366f1; text-decoration: none;">info@seven-app.com</a></p>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script>
+        let authMode = 'login';
+        let currentUser = null;
+
+        const courses = [
+            {
+                id: 'ingles-7-dias',
+                icon: '🌐',
+                title: 'Inglés en 7 Días',
+                description: 'Método Ramón Campayo para hablar frases reales desde el primer día',
+                price: 7,
+                status: 'available',
+                url: 'ingles-7-dias.html',
+                paypalId: 'NYP8KUKK5TWM8'
+            },
+            {
+                id: 'community-manager',
+                icon: '📱',
+                title: 'Community Manager en 7 Días',
+                description: 'Domina la gestión de redes sociales y comunidad',
+                price: 7,
+                status: 'available',
+                url: 'community-manager.html',
+                paypalId: 'CM7DAYS123'
+            },
+            {
+                id: 'marketing-digital',
+                icon: '📈',
+                title: 'Marketing Digital en 7 Días',
+                description: 'Estrategias digitales para hacer crecer tu negocio',
+                price: 7,
+                status: 'available',
+                url: 'marketing-digital.html',
+                paypalId: 'MKD7DAYS123'
+            },
+            {
+                id: 'ecommerce',
+                icon: '🛒',
+                title: 'E-commerce en 7 Días',
+                description: 'Crea y gestiona tu tienda online exitosamente',
+                price: 7,
+                status: 'available',
+                url: 'ecommerce.html',
+                paypalId: 'ECOM7DAYS123'
+            }
+        ];
+
+        function renderCourses() {
+            const grid = document.getElementById('coursesGrid');
+            grid.innerHTML = courses.map(course => {
+                let statusClass = course.status === 'available' ? 'available' : 
+                                  course.status === 'coming-soon' ? 'coming-soon' : 'owned';
+                let statusText = course.status === 'available' ? 'Disponible' : 
+                                 course.status === 'coming-soon' ? 'Próximamente' : 'Accedido';
+                
+                return `
+                    <div class="course-card" onclick="handleCourseClick('${course.id}')">
+                        <div class="course-icon">${course.icon}</div>
+                        <h3>${course.title}</h3>
+                        <p>${course.description}</p>
+                        <div class="course-meta">
+                            <span class="course-price">$${course.price} USD</span>
+                            <span class="course-status ${statusClass}">${statusText}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function handleCourseClick(courseId) {
+            const course = courses.find(c => c.id === courseId);
+            
+            if (course.status === 'coming-soon') {
+                alert('Este curso estará disponible pronto. ¡Mantente atento!');
+                return;
+            }
+
+            if (!currentUser) {
+                openAuth('register');
+                return;
+            }
+
+            window.location.href = course.url;
+        }
+
+        function openAuth(mode) {
+            authMode = mode;
+            const modal = document.getElementById('authModal');
+            const title = document.getElementById('authTitle');
+            const subtitle = document.getElementById('authSubtitle');
+            const btn = document.getElementById('authBtn');
+            const nameGroup = document.getElementById('nameGroup');
+            const switchText = document.getElementById('authSwitchText');
+            const switchLink = document.getElementById('authSwitchLink');
+            const error = document.getElementById('authError');
+            
+            error.classList.remove('show');
+            
+            if (mode === 'login') {
+                title.textContent = 'Iniciar Sesión';
+                subtitle.textContent = 'Accede a tu cuenta Seven App';
+                btn.textContent = 'Iniciar Sesión';
+                nameGroup.style.display = 'none';
+                switchText.textContent = '¿No tienes cuenta?';
+                switchLink.textContent = 'Regístrate';
+            } else {
+                title.textContent = 'Crear Cuenta';
+                subtitle.textContent = 'Únete a Seven App y empieza a aprender';
+                btn.textContent = 'Crear Cuenta';
+                nameGroup.style.display = 'block';
+                switchText.textContent = '¿Ya tienes cuenta?';
+                switchLink.textContent = 'Inicia Sesión';
+            }
+            
+            modal.classList.add('active');
+        }
+
+        function closeAuth() {
+            document.getElementById('authModal').classList.remove('active');
+            document.getElementById('authError').classList.remove('show');
+        }
+
+        function toggleAuthMode() {
+            openAuth(authMode === 'login' ? 'register' : 'login');
+        }
+
+        function showForgotPassword() {
+            const modal = document.getElementById('authModal');
+            modal.innerHTML = `
+                <button class="auth-close" onclick="closeAuth(); location.reload();">&times;</button>
+                <div style="text-align: center;">
+                    <div style="font-size: 64px; margin-bottom: 20px;">🔑</div>
+                    <h2>Recuperar Contraseña</h2>
+                    <p class="subtitle">Ingresá tu email y te enviaremos un enlace para restablecer tu contraseña.</p>
+                    <form onsubmit="handleForgotPassword(event)">
+                        <div class="form-group" style="text-align: left;">
+                            <label>Email</label>
+                            <input type="email" id="forgotEmail" placeholder="tu@email.com" required>
+                        </div>
+                        <div id="forgotError" class="auth-error"></div>
+                        <button type="submit" class="btn-primary" style="width: 100%;">Enviar Enlace</button>
+                    </form>
+                    <p class="auth-switch" style="margin-top: 20px;">
+                        ¿Recordaste tu contraseña? <a onclick="openAuth('login'); location.reload();">Iniciar Sesión</a>
+                    </p>
+                </div>
+            `;
+            modal.classList.add('active');
+        }
+
+        async function handleForgotPassword(e) {
+            e.preventDefault();
+            const email = document.getElementById('forgotEmail').value;
+            const error = document.getElementById('forgotError');
+            
+            try {
+                await firebase.auth().sendPasswordResetEmail(email);
+                const modal = document.getElementById('authModal');
+                modal.innerHTML = `
+                    <button class="auth-close" onclick="closeAuth(); location.reload();">&times;</button>
+                    <div style="text-align: center;">
+                        <div style="font-size: 64px; margin-bottom: 20px;">📧</div>
+                        <h2>¡Email Enviado!</h2>
+                        <p class="subtitle">Te enviamos un enlace para restablecer tu contraseña a:</p>
+                        <p style="color: var(--accent-secondary); font-weight: 600; margin-bottom: 24px;">${email}</p>
+                        <p style="color: var(--text-secondary); font-size: 14px;">Revisá tu bandeja de entrada o spam.</p>
+                    </div>
+                `;
+            } catch (err) {
+                let message = 'No se pudo enviar el email';
+                if (err.code === 'auth/user-not-found') {
+                    message = 'No existe una cuenta con este email';
+                }
+                error.textContent = message;
+                error.classList.add('show');
+            }
+        }
+
+        async function handleAuth(e) {
+            e.preventDefault();
+            const error = document.getElementById('authError');
+            error.classList.remove('show');
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const username = document.getElementById('username').value;
+            const btn = document.getElementById('authBtn');
+            
+            btn.disabled = true;
+            btn.textContent = authMode === 'login' ? 'Iniciando sesión...' : 'Creando cuenta...';
+            
+            try {
+                if (authMode === 'login') {
+                    const cred = await firebase.auth().signInWithEmailAndPassword(email, password);
+                    if (!cred.user.emailVerified) {
+                        await firebase.auth().signOut();
+                        error.innerHTML = 'Debes verificar tu email antes de iniciar sesión. <br><span style="font-size:12px;">Revisá también la carpeta de <strong>Spam</strong>.</span>';
+                        error.classList.add('show');
+                        btn.disabled = false;
+                        btn.textContent = 'Iniciar Sesión';
+                        return;
+                    }
+                    closeAuth();
+                    checkAuthState();
+                } else {
+                    const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+                    try {
+                        await db.collection('users').doc(cred.user.uid).set({
+                            username: username || email.split('@')[0],
+                            email: email,
+                            courses: [],
+                            emailVerified: false,
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    } catch (firestoreErr) {
+                        console.log('Firestore error (non-critical):', firestoreErr);
+                    }
+                    await cred.user.sendEmailVerification();
+                    closeAuth();
+                    showVerificationMessage(email);
+                }
+            } catch (err) {
+                let message = 'Ha ocurrido un error. Verificá tus datos.';
+                if (err.code === 'auth/email-already-in-use') {
+                    message = 'Este email ya está registrado. Probá iniciar sesión.';
+                } else if (err.code === 'auth/wrong-password') {
+                    message = 'Contraseña incorrecta';
+                } else if (err.code === 'auth/user-not-found') {
+                    message = 'No existe una cuenta con este email';
+                } else if (err.code === 'auth/weak-password') {
+                    message = 'La contraseña debe tener al menos 6 caracteres';
+                } else if (err.code === 'auth/invalid-email') {
+                    message = 'Email inválido';
+                } else if (err.code === 'auth/too-many-requests') {
+                    message = 'Demasiados intentos. Esperá unos minutos.';
+                }
+                error.textContent = message;
+                error.classList.add('show');
+            }
+            
+            btn.disabled = false;
+            btn.textContent = authMode === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta';
+        }
+
+        function showVerificationMessage(email) {
+            const modal = document.getElementById('authModal');
+            modal.innerHTML = `
+                <button class="auth-close" onclick="closeAuth(); location.reload();">&times;</button>
+                <div style="text-align: center;">
+                    <div style="font-size: 64px; margin-bottom: 20px;">📧</div>
+                    <h2>¡Revisa tu Email!</h2>
+                    <p class="subtitle">Enviamos un enlace de verificación a:</p>
+                    <p style="color: var(--accent-secondary); font-weight: 600; margin-bottom: 24px;">${email}</p>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 24px;">
+                        Haz clic en el enlace del email para verificar tu cuenta y acceder a Seven App.
+                    </p>
+                    <p style="color: #f59e0b; font-size: 13px; margin-bottom: 20px; font-weight: 500;">
+                        📧 ¿No llegó? Revisá también la carpeta de <strong>Spam</strong>
+                    </p>
+                    <button class="btn-primary" onclick="location.reload()">
+                        Ya verifiqué mi email
+                    </button>
+                </div>
+            `;
+            modal.classList.add('active');
+        }
+
+        async function logout() {
+            await firebase.auth().signOut();
+            checkAuthState();
+        }
+
+        function checkAuthState() {
+            firebase.auth().onAuthStateChanged(async (user) => {
+                currentUser = user;
+                const authArea = document.getElementById('authArea');
+                const userArea = document.getElementById('userArea');
+                const avatar = document.getElementById('userAvatar');
+                
+                if (user) {
+                    if (!user.emailVerified) {
+                        userArea.style.display = 'none';
+                        authArea.innerHTML = `
+                            <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar modo">🌙</button>
+                            <button class="btn-secondary" onclick="resendVerification()">Reenviar Email</button>
+                            <button class="btn-secondary" onclick="logout()">Cerrar Sesión</button>
+                        `;
+                        authArea.style.display = 'flex';
+                        return;
+                    }
+                    
+                    authArea.style.display = 'none';
+                    userArea.style.display = 'flex';
+                    
+                    const initial = user.email ? user.email[0].toUpperCase() : 'U';
+                    avatar.textContent = initial;
+                    
+                    const doc = await db.collection('users').doc(user.uid).get();
+                    let purchasedCourses = [];
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        purchasedCourses = userData.courses || [];
+                    }
+                    purchasedCourses.forEach(courseId => {
+                        const course = courses.find(c => c.id === courseId);
+                        if (course) course.status = 'owned';
+                    });
+                    renderCourses();
+                } else {
+                    const localCourses = JSON.parse(localStorage.getItem('sevenPurchased') || '[]');
+                    localCourses.forEach(courseId => {
+                        const course = courses.find(c => c.id === courseId);
+                        if (course) course.status = 'owned';
+                    });
+                    renderCourses();
+                    authArea.style.display = 'flex';
+                    userArea.style.display = 'none';
+                    authArea.innerHTML = `
+                        <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar modo">🌙</button>
+                        <button class="btn-secondary" onclick="openAuth('login')">Iniciar Sesión</button>
+                        <button class="btn-primary" onclick="openAuth('register')">Registrarse</button>
+                    `;
+                }
+            });
+        }
+
+        async function resendVerification() {
+            if (currentUser) {
+                await currentUser.sendEmailVerification();
+                alert('Email de verificación reenviado. Revisá también la carpeta de Spam.');
+            }
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const btn = document.querySelector('.theme-toggle');
+            
+            if (body.classList.contains('light-mode')) {
+                body.classList.remove('light-mode');
+                btn.textContent = '🌙';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.add('light-mode');
+                btn.textContent = '☀️';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        function loadTheme() {
+            const saved = localStorage.getItem('theme');
+            if (saved === 'light') {
+                document.body.classList.add('light-mode');
+                document.querySelector('.theme-toggle').textContent = '☀️';
+            }
+        }
+
+        renderCourses();
+        loadTheme();
+        checkAuthState();
+    </script>
+</body>
+</html>

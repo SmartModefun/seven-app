@@ -1,0 +1,53 @@
+{
+  "appId": "com.sevenapp.app",
+  "appName": "Seven App",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "https",
+    "cleartext": true,
+    "allowNavigation": [
+      "sevenapp-38711.firebaseapp.com",
+      "sevenapp-38711.web.app",
+      "firebaseusercontent.com",
+      "*.paypal.com",
+      "*.paypalobjects.com"
+    ]
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 3000,
+      "launchAutoHide": true,
+      "backgroundColor": "#0a0a0f",
+      "androidSplashResourceName": "splash",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false,
+      "splashFullScreen": true,
+      "splashImmersive": true
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#0a0a0f"
+    },
+    "Purchases": {
+      "apiKey": "appl_YOUR_REVENUECAT_API_KEY"
+    },
+    "AdMob": {
+      "appId": "ca-app-pub-1641234521055178~YOUR_IOS_APP_ID"
+    }
+  },
+  "ios": {
+    "contentInset": "always",
+    "preferredContentMode": "mobile"
+  },
+  "android": {
+    "buildOptions": {
+      "keystorePath": null,
+      "keystorePassword": null,
+      "keystoreAlias": null,
+      "keystoreAliasPassword": null,
+      "releaseType": null
+    }
+  }
+}

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pago - Seven App</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="assets/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        .payment-container { min-height: calc(100vh - 70px); padding: 60px 20px; display: flex; flex-direction: column; align-items: center; }
+        .payment-tabs { display: flex; gap: 8px; margin-bottom: 32px; flex-wrap: wrap; justify-content: center; }
+        .payment-tab { padding: 12px 24px; background: var(--bg-tertiary); border: 2px solid var(--border); border-radius: 10px; cursor: pointer; font-weight: 600; transition: all 0.3s; color: var(--text-secondary); }
+        .payment-tab.active { background: var(--accent-primary); border-color: var(--accent-primary); color: white; }
+        .payment-tab:hover:not(.active) { border-color: var(--accent-primary); color: var(--accent-primary); }
+        .payment-box { background: var(--bg-secondary); border-radius: 24px; padding: 40px; max-width: 500px; width: 100%; border: 1px solid var(--border); text-align: center; }
+        .payment-section { display: none; }
+        .payment-section.active { display: block; }
+        .payment-icon { font-size: 64px; margin-bottom: 20px; }
+        .course-name { color: var(--accent-secondary); font-size: 20px; margin-bottom: 24px; }
+        .price-display { font-size: 48px; font-weight: 800; color: var(--accent-primary); margin-bottom: 8px; }
+        .price-label { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
+        .payment-features { text-align: left; margin-bottom: 24px; padding: 20px; background: var(--bg-tertiary); border-radius: 12px; list-style: none; }
+        .payment-features li { padding: 8px 0; color: var(--text-secondary); display: flex; align-items: center; gap: 10px; }
+        .payment-features li::before { content: '✓'; color: var(--success); font-weight: bold; }
+        .paypal-btn { display: inline-block; background: #0070ba; color: white; padding: 16px 48px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 18px; transition: background 0.3s; margin-bottom: 16px; }
+        .paypal-btn:hover { background: #005ea6; }
+        .secure-note { color: var(--text-muted); font-size: 12px; margin-top: 16px; }
+        .bank-details { background: var(--bg-tertiary); border-radius: 16px; padding: 24px; margin: 24px 0; text-align: left; }
+        .bank-details h3 { font-size: 18px; margin-bottom: 16px; text-align: center; }
+        .bank-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+        .bank-row:last-child { border-bottom: none; }
+        .bank-label { color: var(--text-secondary); font-size: 14px; }
+        .bank-value { font-weight: 600; font-size: 14px; }
+        .copy-btn { background: var(--accent-primary); color: white; border: none; padding: 4px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; margin-left: 8px; }
+        .copy-btn:hover { background: var(--accent-secondary); }
+        .calculator { background: var(--bg-tertiary); border-radius: 16px; padding: 24px; margin: 24px 0; }
+        .calculator h3 { font-size: 16px; margin-bottom: 16px; }
+        .calculator select, .calculator input { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); margin-bottom: 12px; font-size: 16px; }
+        .calculator-result { background: var(--bg-secondary); border-radius: 12px; padding: 20px; text-align: center; }
+        .calculator-result .amount { font-size: 32px; font-weight: 800; color: var(--accent-primary); }
+        .calculator-result .currency { font-size: 18px; color: var(--text-secondary); }
+        .transfer-note { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 16px; margin: 24px 0; color: var(--success); font-size: 14px; }
+        .code-section { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border); }
+        .code-section h3 { font-size: 16px; margin-bottom: 16px; color: var(--text-secondary); }
+        .code-form { display: flex; gap: 8px; }
+        .code-form input { flex: 1; padding: 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-tertiary); color: var(--text-primary); font-size: 16px; text-transform: uppercase; }
+        .code-form button { padding: 14px 24px; }
+        .code-error { color: #ef4444; font-size: 13px; margin-top: 12px; display: none; }
+        .code-error.show { display: block; }
+        .success-box { display: none; }
+        .success-box.active { display: block; }
+        .error-message { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; padding: 16px; border-radius: 12px; margin-bottom: 24px; display: none; }
+        .error-message.show { display: block; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <img src="assets/logo.png" class="logo" onclick="window.location.href='index.html'" alt="Seven App">
+            <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar modo">🌙</button>
+        </div>
+    </header>
+
+    <div class="payment-container">
+        <div class="payment-tabs">
+            <button class="payment-tab active" onclick="showSection('paypal')">💳 PayPal</button>
+            <button class="payment-tab" onclick="showSection('bank')">🏦 Transferencia</button>
+            <button class="payment-tab" onclick="showSection('code')">🎫 Código</button>
+        </div>
+
+        <div class="payment-box">
+            <div id="errorMessage" class="error-message"></div>
+
+            <div id="paypalSection" class="payment-section active">
+                <div class="payment-icon" id="courseIcon">🌐</div>
+                <h1>Accede al Curso</h1>
+                <p class="course-name" id="courseName">Inglés en 7 Días</p>
+                <div class="price-display">$7 USD</div>
+                <div class="price-label">Pago único • Acceso de por vida</div>
+                <ul class="payment-features">
+                    <li>7 días de contenido intensivo</li>
+                    <li>Acceso desde cualquier dispositivo</li>
+                    <li>Audio y ejercicios prácticos</li>
+                    <li>Certificado de finalización</li>
+                </ul>
+                <a href="#" id="paypalLink" class="paypal-btn" target="_blank">💳 Pagar con PayPal</a>
+                <p class="secure-note">🔒 Pago 100% seguro a través de PayPal</p>
+            </div>
+
+            <div id="bankSection" class="payment-section">
+                <div class="payment-icon">🏦</div>
+                <h1>Transferencia Bancaria</h1>
+                <p class="course-name" id="courseNameBank">Inglés en 7 Días</p>
+                <div class="price-display">$7 USD</div>
+                <div class="price-label">Equivalente en tu moneda</div>
+                <div class="calculator">
+                    <h3>💱 Calculadora de Cambio</h3>
+                    <select id="currencySelect" onchange="updateCalculator()">
+                        <option value="ARS">🇦🇷 Peso Argentino (ARS)</option>
+                        <option value="EUR">🇪🇸 Euro (EUR)</option>
+                        <option value="MXN">🇲🇽 Peso Mexicano (MXN)</option>
+                        <option value="COP">🇨🇴 Peso Colombiano (COP)</option>
+                        <option value="CLP">🇨🇱 Peso Chileno (CLP)</option>
+                        <option value="BRL">🇧🇷 Real Brasileño (BRL)</option>
+                        <option value="UYU">🇺🇾 Peso Uruguayo (UYU)</option>
+                    </select>
+                    <div class="calculator-result">
+                        <div class="amount" id="convertedAmount">-</div>
+                        <div class="currency" id="convertedCurrency">-</div>
+                    </div>
+                </div>
+                <div class="bank-details">
+                    <h3>📋 Datos de la Cuenta</h3>
+                    <div class="bank-row"><span class="bank-label">Alias:</span><span class="bank-value">SevenApp</span></div>
+                    <div class="bank-row"><span class="bank-label">Banco:</span><span class="bank-value">Banco de la Provincia de Buenos Aires</span></div>
+                    <div class="bank-row"><span class="bank-label">CBU:</span><span class="bank-value"><span id="cbuValue">0140100003402351095666</span><button class="copy-btn" onclick="copyToClipboard('cbuValue')">Copiar</button></span></div>
+                    <div class="bank-row"><span class="bank-label">CUIT:</span><span class="bank-value">20248865548</span></div>
+                </div>
+                <div class="transfer-note">📧 Una vez realizada la transferencia, envianos el comprobante a <strong>info@seven-app.com</strong> con tu email de registro. Activaremos tu curso manualmente.</div>
+            </div>
+
+            <div id="codeSection" class="payment-section">
+                <div class="payment-icon">🎫</div>
+                <h1>¿Tienes un Código?</h1>
+                <p style="color: var(--text-secondary); margin-bottom: 24px;">Ingresá tu código de acceso para desbloquear el curso.</p>
+                <form class="code-form" onsubmit="redeemCode(event)">
+                    <input type="text" id="codeInput" placeholder="Ingresá tu código" required maxlength="20">
+                    <button type="submit" class="btn-primary">Canjear</button>
+                </form>
+                <p id="codeError" class="code-error">Código inválido o expirado</p>
+            </div>
+
+            <div id="successBox" class="success-box">
+                <div class="payment-icon">🎉</div>
+                <h1>¡Acceso Activado!</h1>
+                <p style="color: var(--text-secondary); margin: 24px 0;">Tu código fue canjeado exitosamente. Ya tienes acceso al curso.</p>
+                <button class="btn-primary btn-large" onclick="goToCourse()">Comenzar Ahora →</button>
+            </div>
+
+            <a href="index.html" class="back-link" style="margin-top: 24px; display: inline-block;">← Volver al inicio</a>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script>
+        const courses = {
+            'ingles-7-dias': { icon: '🌐', name: 'Inglés en 7 Días', paypalId: 'NYP8KUKK5TWM8' },
+            'community-manager': { icon: '📱', name: 'Community Manager en 7 Días', paypalId: 'DCBZ4CJ8WXZLA' },
+            'marketing-digital': { icon: '📈', name: 'Marketing Digital en 7 Días', paypalId: 'J82W3RGSZ6KG8' },
+            'ecommerce': { icon: '🛒', name: 'E-commerce en 7 Días', paypalId: 'TD7KB64Z3QQUJ' }
+        };
+
+        const exchangeRates = { 'ARS': 1320, 'EUR': 0.92, 'MXN': 17.5, 'COP': 4100, 'CLP': 960, 'BRL': 5.0, 'UYU': 40 };
+        let currentCourse = null;
+
+        function showSection(section) {
+            document.querySelectorAll('.payment-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.payment-section').forEach(s => s.classList.remove('active'));
+            if (section === 'paypal') { document.querySelectorAll('.payment-tab')[0].classList.add('active'); document.getElementById('paypalSection').classList.add('active'); }
+            else if (section === 'bank') { document.querySelectorAll('.payment-tab')[1].classList.add('active'); document.getElementById('bankSection').classList.add('active'); }
+            else { document.querySelectorAll('.payment-tab')[2].classList.add('active'); document.getElementById('codeSection').classList.add('active'); }
+        }
+
+        function updateCalculator() {
+            const currency = document.getElementById('currencySelect').value;
+            const rate = exchangeRates[currency];
+            const amount = 7 * rate;
+            document.getElementById('convertedAmount').textContent = formatCurrency(amount);
+            document.getElementById('convertedCurrency').textContent = getCurrencyName(currency);
+        }
+        
+        function formatCurrency(amount) {
+            const parts = amount.toFixed(2).split('.');
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+            return '$' + parts.join(',');
+        }
+
+        function getCurrencyName(code) {
+            const names = { 'ARS': 'Pesos Argentinos', 'EUR': 'Euros', 'MXN': 'Pesos Mexicanos', 'COP': 'Pesos Colombianos', 'CLP': 'Pesos Chilenos', 'BRL': 'Reales', 'UYU': 'Pesos Uruguayos' };
+            return names[code] || code;
+        }
+
+        function copyToClipboard(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => { alert('¡Copiado al portapapeles!'); });
+        }
+
+        function init() {
+            const params = new URLSearchParams(window.location.search);
+            const courseId = params.get('course');
+            if (!courseId || !courses[courseId]) {
+                document.getElementById('errorMessage').textContent = 'Curso no encontrado';
+                document.getElementById('errorMessage').classList.add('show');
+                return;
+            }
+            currentCourse = courses[courseId];
+            document.getElementById('courseIcon').textContent = currentCourse.icon;
+            document.getElementById('courseName').textContent = currentCourse.name;
+            document.getElementById('courseNameBank').textContent = currentCourse.name;
+            const returnUrl = encodeURIComponent(window.location.href.split('?')[0] + '?course=' + courseId + '&verified=true');
+            const cancelUrl = encodeURIComponent(window.location.href);
+            document.getElementById('paypalLink').href = `https://www.paypal.com/ncp/payment/${currentCourse.paypalId}?return_url=${returnUrl}&cancel_url=${cancelUrl}`;
+            updateCalculator();
+            if (params.get('verified') === 'true') { processPaypalVerification(); }
+        }
+
+        async function processPaypalVerification() {
+            const user = firebase.auth().currentUser;
+            if (!user) { window.location.href = 'index.html'; return; }
+            const params = new URLSearchParams(window.location.search);
+            const courseId = params.get('course');
+            try {
+                const userRef = db.collection('users').doc(user.uid);
+                await userRef.update({ courses: firebase.firestore.FieldValue.arrayUnion(courseId) });
+                document.querySelector('.payment-box').innerHTML = `<div class="success-box active"><div class="payment-icon">🎉</div><h1>¡Pago Confirmado!</h1><p style="color: var(--text-secondary); margin: 24px 0;">Tu pago ha sido verificado. Ya tienes acceso al curso.</p><button class="btn-primary btn-large" onclick="window.location.href='${courseId}.html'">Comenzar Ahora →</button></div>`;
+            } catch (error) { console.error('Error al procesar verificación:', error); }
+        }
+
+        const codeCourseMap = {
+            'INGLES-001': 'ingles-7-dias',
+            'CM-001': 'community-manager',
+            'MK-001': 'marketing-digital',
+            'EC-001': 'ecommerce',
+            'TESTER-001': 'all',
+            'TODOS-001': 'all'
+        };
+
+        async function redeemCode(e) {
+            e.preventDefault();
+            const codeInput = document.getElementById('codeInput').value.trim().toUpperCase();
+            const error = document.getElementById('codeError');
+            const params = new URLSearchParams(window.location.search);
+            const courseId = params.get('course');
+
+            const purchased = JSON.parse(localStorage.getItem('sevenPurchased') || '[]');
+
+            if (codeInput === 'TESTER-001' || codeInput === 'TODOS-001') {
+                const allCourses = ['ingles-7-dias', 'community-manager', 'marketing-digital', 'ecommerce'];
+                const combined = [...new Set([...purchased, ...allCourses])];
+                localStorage.setItem('sevenPurchased', JSON.stringify(combined));
+                document.getElementById('codeSection').innerHTML = `<div class="payment-icon">🎉</div><h1>¡Código Canjeado!</h1><p style="color: var(--text-secondary); margin: 24px 0;">Tu código fue activado exitosamente. Ya tienes acceso a todos los cursos.</p><button class="btn-primary btn-large" onclick="window.location.href='index.html'">Ir al Inicio →</button>`;
+                return;
+            }
+
+            const targetCourse = codeCourseMap[codeInput];
+            if (!targetCourse) {
+                error.textContent = 'Código inválido';
+                error.classList.add('show');
+                return;
+            }
+
+            try {
+                const codeDoc = await db.collection('codes').doc(codeInput).get();
+                
+                if (!codeDoc.exists) {
+                    error.textContent = 'Código inválido';
+                    error.classList.add('show');
+                    return;
+                }
+
+                const codeData = codeDoc.data();
+
+                if (codeData.used) {
+                    error.textContent = 'Este código ya fue utilizado';
+                    error.classList.add('show');
+                    return;
+                }
+
+                await db.collection('codes').doc(codeInput).update({
+                    used: true,
+                    usedAt: new Date().toISOString()
+                });
+
+                if (targetCourse === 'all') {
+                    const allCourses = ['ingles-7-dias', 'community-manager', 'marketing-digital', 'ecommerce'];
+                    const combined = [...new Set([...purchased, ...allCourses])];
+                    localStorage.setItem('sevenPurchased', JSON.stringify(combined));
+                    document.getElementById('codeSection').innerHTML = `<div class="payment-icon">🎉</div><h1>¡Código Canjeado!</h1><p style="color: var(--text-secondary); margin: 24px 0;">Tu código fue activado exitosamente. Ya tienes acceso a todos los cursos.</p><button class="btn-primary btn-large" onclick="window.location.href='index.html'">Ir al Inicio →</button>`;
+                } else {
+                    if (!purchased.includes(targetCourse)) {
+                        purchased.push(targetCourse);
+                        localStorage.setItem('sevenPurchased', JSON.stringify(purchased));
+                    }
+                    document.getElementById('codeSection').innerHTML = `<div class="payment-icon">🎉</div><h1>¡Código Canjeado!</h1><p style="color: var(--text-secondary); margin: 24px 0;">Tu código fue activado exitosamente. Ya tienes acceso a este curso.</p><button class="btn-primary btn-large" onclick="window.location.href='${targetCourse}.html'">Comenzar Ahora →</button>`;
+                }
+
+            } catch (err) {
+                console.error('Error verificando código:', err);
+                error.textContent = 'Error al verificar código. Intenta de nuevo.';
+                error.classList.add('show');
+            }
+        }
+
+        function goToCourse() {
+            const params = new URLSearchParams(window.location.search);
+            const courseId = params.get('course');
+            window.location.href = courseId + '.html';
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const btn = document.querySelector('.theme-toggle');
+            if (body.classList.contains('light-mode')) { body.classList.remove('light-mode'); btn.textContent = '🌙'; localStorage.setItem('theme', 'dark'); }
+            else { body.classList.add('light-mode'); btn.textContent = '☀️'; localStorage.setItem('theme', 'light'); }
+        }
+
+        function loadTheme() {
+            const saved = localStorage.getItem('theme');
+            if (saved === 'light') { document.body.classList.add('light-mode'); document.querySelector('.theme-toggle').textContent = '☀️'; }
+        }
+
+        loadTheme();
+        init();
+    </script>
+</body>
+</html>

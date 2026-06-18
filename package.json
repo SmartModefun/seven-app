@@ -1,0 +1,37 @@
+{
+  "name": "seven-app",
+  "version": "1.0.0",
+  "description": "Seven App - Aprende Todo en 7 Días",
+  "main": "index.html",
+  "scripts": {
+    "build": "node scripts/sync-www.js",
+    "cap:copy": "npx cap copy",
+    "cap:sync": "npm run build && npx cap sync",
+    "cap:open:android": "npx cap open android",
+    "cap:open:ios": "npx cap open ios",
+    "dev": "npx serve www"
+  },
+  "keywords": [
+    "education",
+    "courses",
+    "learning"
+  ],
+  "author": "Seven App",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@capacitor-community/admob": "^7.2.0",
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/haptics": "^7.0.0",
+    "@capacitor/ios": "^7.6.5",
+    "@capacitor/keyboard": "^7.0.0",
+    "@capacitor/splash-screen": "^7.0.0",
+    "@capacitor/status-bar": "^7.0.0",
+    "@revenuecat/purchases-capacitor": "^11.3.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0"
+  }
+}

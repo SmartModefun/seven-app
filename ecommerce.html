@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-commerce en 7 Días - Seven App</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="assets/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <script src="capacitor-bridge.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <img src="assets/logo.png" class="logo" onclick="startCourse()" alt="Seven App">
+            <div style="display: flex; align-items: center;">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar modo">🌙</button>
+                <button class="btn-primary" onclick="startCourse()">Comenzar Gratis</button>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-background">
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+            <div class="orb orb-3"></div>
+        </div>
+        <div class="hero-content">
+            <span class="badge">🛒 Tienda Online</span>
+            <h1>E-commerce en <span class="gradient-text">7 Días</span></h1>
+            <p class="hero-subtitle">Crea y gestiona tu tienda online</p>
+            <button class="btn-primary btn-large" onclick="startCourse()">Comenzar Gratis</button>
+        </div>
+    </section>
+
+    <section class="course-overview">
+        <div class="section-header">
+            <h2>El Curso: E-commerce</h2>
+            <p>Contenido estructurado para vender online</p>
+        </div>
+        
+        <div class="days-container">
+            <div class="day-row">
+                <div class="day-card free" onclick="openDay(1)">
+                    <div class="day-num">1</div>
+                    <div class="day-info">
+                        <h3>Fundamentos</h3>
+                        <p>Qué es e-commerce y modelos de negocio</p>
+                    </div>
+                    <span class="day-badge">GRATIS</span>
+                </div>
+                
+                <div class="day-card" onclick="openDay(2)">
+                    <div class="day-num">2</div>
+                    <div class="day-info">
+                        <h3>Plataformas</h3>
+                        <p>Shopify, WooCommerce, Magento</p>
+                    </div>
+                    <span class="day-badge">$7</span>
+                </div>
+                
+                <div class="day-card" onclick="openDay(3)">
+                    <div class="day-num">3</div>
+                    <div class="day-info">
+                        <h3>Catálogo</h3>
+                        <p>Productos, fotos y descripciones</p>
+                    </div>
+                    <span class="day-badge">$7</span>
+                </div>
+                
+                <div class="day-card" onclick="openDay(4)">
+                    <div class="day-num">4</div>
+                    <div class="day-info">
+                        <h3>Pagos</h3>
+                        <p>Pasarelas y métodos de pago</p>
+                    </div>
+                    <span class="day-badge">$7</span>
+                </div>
+                
+                <div class="day-card" onclick="openDay(5)">
+                    <div class="day-num">5</div>
+                    <div class="day-info">
+                        <h3>Envíos</h3>
+                        <p>Logística y costos</p>
+                    </div>
+                    <span class="day-badge">$7</span>
+                </div>
+                
+                <div class="day-card" onclick="openDay(6)">
+                    <div class="day-num">6</div>
+                    <div class="day-info">
+                        <h3>Marketing</h3>
+                        <p>Traffic y conversión</p>
+                    </div>
+                    <span class="day-badge">$7</span>
+                </div>
+                
+                <div class="day-card" onclick="openDay(7)">
+                    <div class="day-num">7</div>
+                    <div class="day-info">
+                        <h3>Lanzamiento</h3>
+                        <p>Tu plan para abrir al mundo</p>
+                    </div>
+                    <span class="day-badge">$7</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="pricing" id="pricing">
+        <div class="section-header">
+            <h2>Desbloquea el Curso Completo</h2>
+            <p>Accede a los días 2-7 por solo:</p>
+        </div>
+        
+        <div class="price-tag">$7 USD</div>
+        
+        <div class="paypal-box">
+            <a href="https://www.paypal.com/ncp/payment/TD7KB64Z3QQUJ" 
+               target="_blank" 
+               class="paypal-link">
+                💳 Pagar con PayPal
+            </a>
+        </div>
+        
+        <p style="color: #6b7280; font-size: 12px; margin-top: 15px;">🔒 Pago seguro</p>
+    </section>
+
+    <footer class="footer">
+        <p>&copy; 2026 Seven App</p>
+        <p style="margin-top: 8px;">📧 <a href="mailto:info@seven-app.com" style="color: #6366f1; text-decoration: none;">info@seven-app.com</a></p>
+    </footer>
+
+    <script>
+        function toggleTheme() {
+            const body = document.body;
+            const btn = document.querySelector('.theme-toggle');
+            if (body.classList.contains('light-mode')) {
+                body.classList.remove('light-mode');
+                btn.textContent = '🌙';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.add('light-mode');
+                btn.textContent = '☀️';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+        
+        function loadTheme() {
+            const saved = localStorage.getItem('theme');
+            if (saved === 'light') {
+                document.body.classList.add('light-mode');
+                document.querySelector('.theme-toggle').textContent = '☀️';
+            }
+        }
+        
+        loadTheme();
+        
+        function startCourse() {
+            openDay(1);
+        }
+        
+        async function openDay(day) {
+            if (day === 1) {
+                window.location.href = 'ec-1.html';
+            } else {
+                const purchased = JSON.parse(localStorage.getItem('sevenPurchased') || '[]');
+                if (purchased.includes('ecommerce')) {
+                    window.location.href = 'ec-' + day + '.html';
+                } else if (window.CapacitorBridge && window.CapacitorBridge.isCapacitor) {
+                    try {
+                        await window.CapacitorBridge.initRevenueCat();
+                        const hasAccess = await window.CapacitorBridge.checkCourseAccess('ecommerce');
+                        if (hasAccess) {
+                            purchased.push('ecommerce');
+                            localStorage.setItem('sevenPurchased', JSON.stringify(purchased));
+                            window.location.href = 'ec-' + day + '.html';
+                        } else {
+                            window.location.href = 'pago.html?course=ecommerce';
+                        }
+                    } catch (e) {
+                        window.location.href = 'pago.html?course=ecommerce';
+                    }
+                } else {
+                    window.location.href = 'pago.html?course=ecommerce';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

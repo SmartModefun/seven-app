@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seven App - Día 7: Conversación Real</title>
+    <link rel="icon" href="assets/favicon.png">
+    <link rel="apple-touch-icon" href="assets/logo.png">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <style>
+        .paywall-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(10,10,15,0.95); z-index:1000; display:flex; align-items:center; justify-content:center; }
+        .paywall-box { background:#12121a; border:1px solid #2a2a3a; border-radius:20px; padding:40px; text-align:center; max-width:400px; margin:20px; }
+        .paywall-box .icon { font-size:64px; margin-bottom:16px; }
+        .paywall-box h2 { color:#6366f1; margin-bottom:12px; }
+        .paywall-box p { color:#9ca3af; margin-bottom:24px; }
+        .paywall-box .btn-unlock { display:inline-block; background:linear-gradient(135deg,#6366f1,#818cf8); color:white; padding:14px 32px; border-radius:10px; text-decoration:none; font-weight:600; }
+        .paywall-box .back-link { display:block; margin-top:16px; color:#6b7280; text-decoration:none; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: #0a0a0f; color: #fff; margin: 0; padding: 0; padding-top: 80px; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header-bar { position: fixed; top: 0; left: 0; right: 0; background: #12121a; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2a3a; z-index: 100; }
+        .header-bar img { height: 35px; cursor: pointer; }
+        .theme-toggle { background: #334155; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 16px; }
+        .home-btn { background: #334155; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 14px; }
+        .day-title { text-align: center; margin-bottom: 10px; }
+        .day-title h1 { color: #6366f1; margin: 0; font-size: 28px; }
+        .day-title p { color: #9ca3af; margin: 5px 0 0 0; }
+        .progress-bar { background: #1e293b; height: 6px; border-radius: 3px; margin: 20px 0; overflow: hidden; }
+        .progress-fill { background: #6366f1; height: 100%; width: 0%; transition: width 0.3s; }
+        .lesson-card { background: #12121a; border-radius: 16px; padding: 30px; text-align: center; margin: 20px 0; border: 1px solid #2a2a3a; }
+        .word { font-size: 42px; font-weight: bold; margin-bottom: 10px; }
+        .translation { font-size: 28px; color: #9ca3af; margin-bottom: 15px; }
+        .pronunciation { font-size: 16px; color: #6366f1; font-style: italic; margin-bottom: 20px; }
+        .audio-btn { background: #334155; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 0; }
+        .audio-btn:hover { background: #475569; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 20px; }
+        .nav-btn { background: #334155; color: white; border: none; padding: 14px 28px; border-radius: 8px; cursor: pointer; font-size: 16px; }
+        .nav-btn:hover { background: #475569; }
+        .nav-btn.next { background: #6366f1; }
+        .nav-btn.next:hover { background: #4f46e5; }
+        .lesson-count { text-align: center; color: #9ca3af; font-size: 14px; margin: 15px 0; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; }
+        .tab { background: #1e293b; color: #9ca3af; border: 1px solid #2a2a3a; padding: 10px 16px; border-radius: 8px; cursor: pointer; white-space: nowrap; font-size: 14px; }
+        .tab.active { background: #6366f1; color: white; border-color: #6366f1; }
+        .footer { text-align: center; padding: 30px 20px; color: #6b7280; font-size: 14px; border-top: 1px solid #2a2a3a; margin-top: 40px; }
+        .footer a { color: #6366f1; text-decoration: none; }
+        .completion-box { text-align: center; padding: 40px 20px; }
+        .completion-box h2 { color: var(--accent-primary); margin-bottom: 20px; }
+        .completion-box p { color: var(--text-secondary); margin-bottom: 30px; }
+        .exercise-card { background: #1a1a2a; border-radius: 12px; padding: 20px; margin: 15px 0; border: 1px solid #3a3a5a; }
+        .exercise-title { color: #818cf8; font-size: 18px; font-weight: bold; margin-bottom: 15px; }
+        .exercise-btn { background: #6366f1; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 5px; }
+        .exercise-btn:hover { background: #4f46e5; }
+        .mic-btn { background: #ef4444; }
+        .mic-btn.recording { animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .result-msg { padding: 10px; border-radius: 8px; margin: 10px 0; font-size: 14px; }
+        .result-msg.correct { background: #065f46; color: #6ee7b7; }
+        .result-msg.incorrect { background: #7f1d1d; color: #fca5a5; }
+        .exercise-progress { display: flex; justify-content: space-between; margin-top: 15px; font-size: 14px; color: #9ca3af; }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+        .option-btn { background: #1e293b; color: white; border: 1px solid #3a3a5a; padding: 15px; border-radius: 8px; cursor: pointer; font-size: 16px; }
+        .option-btn:hover { background: #334155; }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <img src="assets/logo.png" onclick="window.location.href='index.html'" alt="Seven App">
+        <div style="display: flex; gap: 10px;">
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            <a href="ingles-7-dias.html" class="home-btn">← Volver</a>
+            <a href="index.html" class="home-btn">🏠 Inicio</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="day-title">
+            <h1>Día 7: Conversación Real</h1>
+            <p>Real Conversations • Método Ramón Campayo</p>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+        <div class="lesson-count"><span id="count">1</span> de <span id="total">8</span></div>
+        <div class="tabs">
+            <button class="tab active" onclick="showSection('dialogues')">💬 Diálogos</button>
+            <button class="tab" onclick="showSection('review')">📝 Repaso</button>
+            <button class="tab" onclick="showSection('exercises')">✏️ Ejercicios</button>
+        </div>
+        <div class="lesson-card" id="lessonCard">
+            <div id="dialogueContent">
+                <div style="text-align: left; margin-bottom: 20px;">
+                    <span style="color: #10b981; font-weight: bold;">Person A:</span>
+                    <p class="word" style="font-size: 20px;" id="speakerA">Hello! How are you today?</p>
+                    <p class="translation" style="font-size: 16px; color: #6b7280;" id="speakerATrans">¡Hola! ¿Cómo estás hoy?</p>
+                </div>
+                <div style="text-align: right;">
+                    <span style="color: #6366f1; font-weight: bold;">Person B:</span>
+                    <p class="translation" style="font-size: 20px;" id="speakerB">I'm great, thank you! And you?</p>
+                    <p class="translation" style="font-size: 16px; color: #6b7280;" id="speakerBTrans">¡Estoy genial, gracias! ¿Y vos?</p>
+                </div>
+            </div>
+            <div id="reviewContent" style="display: none; text-align: left;">
+                <h3 style="color: var(--accent-primary); margin-bottom: 20px;">Palabras Clave del Curso</h3>
+                <div id="reviewWords"></div>
+            </div>
+            <button class="audio-btn" onclick="playAudio()">🔊 Escuchar</button>
+        </div>
+        <div id="exercise-container" class="exercise-card" style="display: none;">
+            <div class="exercise-title" id="exercise-title">Ejercicio 1</div>
+            <div id="exercise-question" style="font-size: 24px; margin-bottom: 20px; font-weight: bold;"></div>
+            <div id="exercise-content"></div>
+            <div id="exercise-result"></div>
+            <div class="exercise-progress">
+                <span id="exercise-count">1</span> de <span id="exercise-total">10</span>
+            </div>
+            <div style="margin-top: 15px;">
+                <button class="exercise-btn" id="advance-btn" onclick="advanceExercise()" style="display:none;">✓ Avanzar</button>
+                <button class="exercise-btn" id="check-btn" onclick="checkAnswer()">✓ Verificar</button>
+                <button class="exercise-btn mic-btn" id="mic-btn" onclick="toggleMic()">🎤 Hablar</button>
+            </div>
+        </div>
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="prevLesson()">← Anterior</button>
+            <button class="nav-btn next" id="nextBtn" onclick="nextLesson()">Siguiente →</button>
+        </div>
+    </div>
+
+    <script>
+        var dialogues = [
+            { speakerA: "Hello! Welcome to our hotel. Do you have a reservation?", speakerATrans: "¡Hola! Bienvenido a nuestro hotel. ¿Tiene reservación?", speakerB: "Yes, I do. The name is Smith.", speakerBTrans: "Sí. El nombre es Smith.", pronunciationA: "[jelou uelkam tu aur jut jol]", pronunciationB: "[ies ai du de neim is smith]" },
+            { speakerA: "Perfect! Here's your key. Room 305. Breakfast is from 7 to 10.", speakerATrans: "¡Perfecto! Aquí tiene su llave. Habitación 305. El desayuno es de 7 a 10.", speakerB: "Thank you! Where's the elevator?", speakerBTrans: "¡Gracias! ¿Dónde está el ascensor?", pronunciationA: "[perfect jirs ior ki rum tri haundrid faiv brekfast iz from seven tu ten]", pronunciationB: "[zank iu uerz de eliveitor]" },
+            { speakerA: "Right behind you. Enjoy your stay!", speakerATrans: "Justo detrás de usted. ¡Disfrute su estadía!", speakerB: "Thank you so much!", speakerBTrans: "¡Muchas gracias!", pronunciationA: "[rait bijaind iu inyoi ior stei]", pronunciationB: "[zank iu sou mach]" },
+            { speakerA: "Excuse me, where can I find the metro station?", speakerATrans: "Disculpe, ¿dónde puedo encontrar la estación de metro?", speakerB: "Go straight two blocks and turn left. You can't miss it.", speakerBTrans: "Siga recto dos cuadras y gire a la izquierda. No puede perdérselo.", pronunciationA: "[ikskius mi uer kan ai faind de metro steichn]", pronunciationB: "[gou streit tu bloks and tern left iu kant mis it]" },
+            { speakerA: "Can I see the menu, please? What do you recommend?", speakerATrans: "¿Puedo ver el menú, por favor? ¿Qué me recomienda?", speakerB: "The steak is excellent. Would you like some wine?", speakerBTrans: "El bistec es excelente. ¿Le gustaría un poco de vino?", pronunciationA: "[kan ai si de menju pliz uat du iu recomand]", pronunciationB: "[da steik is ikselent uud iu laik sam uain]" }
+        ];
+
+        var reviewWords = [
+            { word: "Hello, Goodbye, Thank you", meaning: "Saludos básicos", pronunciation: "[jelou gudbai zank iu]" },
+            { word: "How are you? I'm fine", meaning: "¿Cómo estás? Estoy bien", pronunciation: "[jau ar iu aim fain]" },
+            { word: "Table, Menu, Bill", meaning: "Mesa, Menú, Cuenta", pronunciation: "[teibol menju bil]" },
+            { word: "Room, Key, Check-in", meaning: "Habitación, Llave, Registro", pronunciation: "[rum ki chekin]" },
+            { word: "Taxi, Bus, Metro", meaning: "Taxi, Autobús, Metro", pronunciation: "[taksi bas metro]" },
+            { word: "Price, Size, Cash", meaning: "Precio, Talle, Efectivo", pronunciation: "[prais sais kash]" },
+            { word: "Excuse me, Sorry, Please", meaning: "Disculpe, Lo siento, Por favor", pronunciation: "[ikskius mi sori pliz]" },
+            { word: "Where, When, How much", meaning: "Dónde, Cuándo, Cuánto", pronunciation: "[uer uen jau much]" }
+        ];
+
+        var currentSection = 'dialogues';
+        var currentIndex = 0;
+        var exerciseIndex = 0;
+        var exercises = [
+            { type: 'speak', question: 'Di: "Hello, how are you?"', answer: 'hello how are you', audioText: 'hello how are you' },
+            { type: 'speak', question: 'Di: "I am doing great"', answer: 'i am doing great', audioText: 'i am doing great' },
+            { type: 'speak', question: 'Di: "Nice to meet you"', answer: 'nice to meet you', audioText: 'nice to meet you' },
+            { type: 'speak', question: 'Di: "Where are you from?"', answer: 'where are you from', audioText: 'where are you from' },
+            { type: 'speak', question: 'Di: "Have a good day"', answer: 'have a good day', audioText: 'have a good day' },
+            { type: 'choice', question: '¿Cómo dices "Gracias"?', answer: 'thank you', options: ['thank you', 'please', 'sorry', 'hello'], audioText: 'thank you' },
+            { type: 'choice', question: '¿Qué significa "Goodbye"?', answer: 'adiós', options: ['hola', 'adiós', 'gracias', 'por favor'], audioText: 'goodbye' },
+            { type: 'choice', question: 'Completa: "How ___ you?"', answer: 'are', options: ['is', 'are', 'am', 'be'], audioText: 'how are you' },
+            { type: 'choice', question: '¿Qué significa "Excuse me"?', answer: 'disculpe', options: ['gracias', 'hola', 'disculpe', 'lo siento'], audioText: 'excuse me' },
+            { type: 'choice', question: '¿Cómo dices "De nada"?', answer: 'you are welcome', options: ['you are welcome', 'thank you', 'sorry', 'please'], audioText: 'you are welcome' }
+        ];
+
+function showSection(section) {
+            currentSection = section;
+            currentIndex = 0;
+            document.querySelectorAll('.tab').forEach(function(tab) { tab.classList.remove('active'); });
+            event.target.classList.add('active');
+            document.querySelector('.nav-buttons').style.display = section === 'exercises' ? 'none' : 'flex';
+            document.getElementById('exercise-container').style.display = section === 'exercises' ? 'block' : 'none';
+            
+            if (section === 'dialogues') {
+                document.getElementById('dialogueContent').style.display = 'block';
+                document.getElementById('reviewContent').style.display = 'none';
+                document.getElementById('lessonCard').style.display = 'block';
+            } else if (section === 'review') {
+                document.getElementById('dialogueContent').style.display = 'none';
+                document.getElementById('reviewContent').style.display = 'block';
+                document.getElementById('lessonCard').style.display = 'block';
+                renderReview();
+            } else if (section === 'exercises') {
+                document.getElementById('lessonCard').style.display = 'none';
+                if (typeof loadExercise === 'function') loadExercise();
+            }
+            updateDisplay();
+        }
+
+function loadExercise() {
+            document.getElementById('check-btn').style.display = 'inline-block';
+            document.getElementById('advance-btn').style.display = 'none';
+            const ex = exercises[exerciseIndex];
+            document.getElementById('exercise-title').textContent = 'Ejercicio ' + (exerciseIndex + 1);
+            document.getElementById('exercise-question').textContent = ex.question;
+            document.getElementById('exercise-count').textContent = exerciseIndex + 1;
+            document.getElementById('exercise-total').textContent = exercises.length;
+            document.getElementById('exercise-result').innerHTML = '';
+
+            if (ex.type === 'speak') {
+                document.getElementById('mic-btn').style.display = 'inline-block';
+                document.getElementById('exercise-content').innerHTML = '<p style="color:#9ca3af;">Presiona el micrófono y habla.</p><button class="exercise-btn" onclick="playAudio()">🔊 Escuchar</button>';
+            } else {
+                document.getElementById('mic-btn').style.display = 'none';
+                document.getElementById('exercise-content').innerHTML = '<div class="options-grid">' + 
+                    ex.options.map(function(opt) { return '<button class="option-btn" onclick="selectOption(this,\'' + opt + '\')">' + opt + '</button>'; }).join('') + '</div>';
+            }
+        }
+
+        function selectOption(btn, value) { checkAnswer(value); }
+
+        function checkAnswer(userAnswer) {
+            const ex = exercises[exerciseIndex];
+            const isCorrect = userAnswer && userAnswer.toLowerCase().indexOf(ex.answer.toLowerCase()) > -1;
+            document.getElementById('exercise-result').innerHTML = isCorrect ? 
+                '<div class="result-msg correct">✓ ¡Correcto!</div>' :
+                '<div class="result-msg incorrect">✗ Era: ' + ex.answer + '</div>';
+            document.getElementById('check-btn').style.display = 'none';
+            document.getElementById('advance-btn').style.display = 'inline-block';
+        }
+
+        function checkSpeech(transcript) {
+            const ex = exercises[exerciseIndex];
+            const isCorrect = transcript.indexOf(ex.answer) > -1 || levenshtein(transcript, ex.answer) <= 2;
+            document.getElementById('exercise-result').innerHTML = '<div class="result-msg">' + (isCorrect ? '✓ ' : '✗ ') + transcript + '</div>';
+            document.getElementById('check-btn').style.display = 'none';
+            document.getElementById('advance-btn').style.display = 'inline-block';
+        }
+
+        function advanceExercise() {
+            if (exerciseIndex >= exercises.length - 1) {
+                window.location.href = 'pago.html?course=ingles-7-dias';
+            } else {
+                exerciseIndex++;
+                loadExercise();
+            }
+        }
+
+        function playAudio() {
+            var text;
+            if (currentSection === 'exercises') {
+                const ex = exercises[exerciseIndex];
+                text = ex.audioText || ex.answer;
+            } else if (currentSection === 'dialogues') {
+                const d = dialogues[currentIndex];
+                text = currentIndex % 2 === 0 ? d.speakerA : d.speakerB;
+            } else {
+                text = '';
+            }
+            if ('speechSynthesis' in window) { 
+                speechSynthesis.cancel(); 
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.8;
+                speechSynthesis.speak(utterance); 
+            }
+        }
+
+        function skipExercise() { exerciseIndex = (exerciseIndex + 1) % exercises.length; loadExercise(); }
+
+        function levenshtein(a, b) {
+            var matrix = [];
+            for (var i = 0; i <= b.length; i++) matrix[i] = [i];
+            for (var j = 0; j <= a.length; j++) matrix[0][j] = j;
+            for (var i = 1; i <= b.length; i++) {
+                for (var j = 1; j <= a.length; j++) {
+                    if (b.charAt(i-1) === a.charAt(j-1)) matrix[i][j] = matrix[i-1][j-1];
+                    else matrix[i][j] = Math.min(matrix[i-1][j-1], matrix[i][j-1], matrix[i-1][j]) + 1;
+                }
+            }
+            return matrix[b.length][a.length];
+        }
+    </script>
+
+    <div id="paywallOverlay" class="paywall-overlay" style="display:none;">
+        <div class="paywall-box">
+            <div class="icon">🔒</div>
+            <h2>Contenido Bloqueado</h2>
+            <p>Este contenido requiere el curso completo. Desbloquea para acceder a todas las lecciones.</p>
+            <a href="pago.html?course=ingles-7-dias" class="btn-unlock">💳 Desbloquear por $7 USD</a>
+            <a href="ingles-7-dias.html" class="back-link">← Volver al curso</a>
+        </div>
+    </div>
+
+    <footer class="footer"><p>&copy; 2026 Seven App</p></footer>
+    <script>
+var courseId = 'ingles-7-dias';
+        async function checkAccess() {
+            var purchased = JSON.parse(localStorage.getItem('sevenPurchased') || '[]');
+            if (purchased.indexOf(courseId) === -1) {
+                document.getElementById('paywallOverlay').style.display = 'flex';
+            }
+        }
+        checkAccess();
+    </script>
+</body>
+</html>

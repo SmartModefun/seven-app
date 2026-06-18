@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seven App - Día 3: En el Restaurante</title>
+    <link rel="icon" href="assets/favicon.png">
+    <link rel="apple-touch-icon" href="assets/logo.png">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <style>
+        .paywall-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(10,10,15,0.95); z-index:1000; display:flex; align-items:center; justify-content:center; }
+        .paywall-box { background:#12121a; border:1px solid #2a2a3a; border-radius:20px; padding:40px; text-align:center; max-width:400px; margin:20px; }
+        .paywall-box .icon { font-size:64px; margin-bottom:16px; }
+        .paywall-box h2 { color:#6366f1; margin-bottom:12px; }
+        .paywall-box p { color:#9ca3af; margin-bottom:24px; }
+        .paywall-box .btn-unlock { display:inline-block; background:linear-gradient(135deg,#6366f1,#818cf8); color:white; padding:14px 32px; border-radius:10px; text-decoration:none; font-weight:600; }
+        .paywall-box .back-link { display:block; margin-top:16px; color:#6b7280; text-decoration:none; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: #0a0a0f; color: #fff; margin: 0; padding: 0; padding-top: 80px; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header-bar { position: fixed; top: 0; left: 0; right: 0; background: #12121a; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2a3a; z-index: 100; }
+        .header-bar img { height: 35px; cursor: pointer; }
+        .theme-toggle { background: #334155; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 16px; }
+        .home-btn { background: #334155; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; text-decoration: none; font-size: 14px; }
+        .day-title { text-align: center; margin-bottom: 10px; }
+        .day-title h1 { color: #6366f1; margin: 0; font-size: 28px; }
+        .day-title p { color: #9ca3af; margin: 5px 0 0 0; }
+        .progress-bar { background: #1e293b; height: 6px; border-radius: 3px; margin: 20px 0; overflow: hidden; }
+        .progress-fill { background: #6366f1; height: 100%; width: 0%; transition: width 0.3s; }
+        .lesson-card { background: #12121a; border-radius: 16px; padding: 30px; text-align: center; margin: 20px 0; border: 1px solid #2a2a3a; }
+        .word { font-size: 42px; font-weight: bold; margin-bottom: 10px; }
+        .translation { font-size: 28px; color: #9ca3af; margin-bottom: 15px; }
+        .pronunciation { font-size: 16px; color: #6366f1; font-style: italic; margin-bottom: 20px; }
+        .audio-btn { background: #334155; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 10px 0; }
+        .audio-btn:hover { background: #475569; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 20px; }
+        .nav-btn { background: #334155; color: white; border: none; padding: 14px 28px; border-radius: 8px; cursor: pointer; font-size: 16px; }
+        .nav-btn:hover { background: #475569; }
+        .nav-btn.next { background: #6366f1; }
+        .nav-btn.next:hover { background: #4f46e5; }
+        .lesson-count { text-align: center; color: #9ca3af; font-size: 14px; margin: 15px 0; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; }
+        .tab { background: #1e293b; color: #9ca3af; border: 1px solid #2a2a3a; padding: 10px 16px; border-radius: 8px; cursor: pointer; white-space: nowrap; font-size: 14px; }
+        .tab.active { background: #6366f1; color: white; border-color: #6366f1; }
+        .footer { text-align: center; padding: 30px 20px; color: #6b7280; font-size: 14px; border-top: 1px solid #2a2a3a; margin-top: 40px; }
+        .footer a { color: #6366f1; text-decoration: none; }
+        .exercise-card { background: #1a1a2a; border-radius: 12px; padding: 20px; margin: 15px 0; border: 1px solid #3a3a5a; }
+        .exercise-title { color: #818cf8; font-size: 18px; font-weight: bold; margin-bottom: 15px; }
+        .exercise-btn { background: #6366f1; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 5px; }
+        .exercise-btn:hover { background: #4f46e5; }
+        .mic-btn { background: #ef4444; }
+        .mic-btn.recording { animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .result-msg { padding: 10px; border-radius: 8px; margin: 10px 0; font-size: 14px; }
+        .result-msg.correct { background: #065f46; color: #6ee7b7; }
+        .result-msg.incorrect { background: #7f1d1d; color: #fca5a5; }
+        .exercise-progress { display: flex; justify-content: space-between; margin-top: 15px; font-size: 14px; color: #9ca3af; }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+        .option-btn { background: #1e293b; color: white; border: 1px solid #3a3a5a; padding: 15px; border-radius: 8px; cursor: pointer; font-size: 16px; }
+        .option-btn:hover { background: #334155; }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <img src="assets/logo.png" onclick="window.location.href='index.html'" alt="Seven App">
+        <div style="display: flex; gap: 10px;">
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            <a href="ingles-7-dias.html" class="home-btn">← Volver</a>
+            <a href="index.html" class="home-btn">🏠 Inicio</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="day-title">
+            <h1>Día 3: En el Restaurante</h1>
+            <p>At the Restaurant • Método Ramón Campayo</p>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+        <div class="lesson-count"><span id="count">1</span> de <span id="total">20</span></div>
+        <div class="tabs">
+            <button class="tab active" onclick="showSection('vocabulary')">📚 Vocabulario</button>
+            <button class="tab" onclick="showSection('phrases')">💬 Frases</button>
+            <button class="tab" onclick="showSection('exercises')">✏️ Ejercicios</button>
+        </div>
+        <div class="lesson-card" id="lesson-card">
+            <div class="word" id="word"></div>
+            <div class="translation" id="translation"></div>
+            <div class="pronunciation" id="pronunciation"></div>
+            <button class="audio-btn" onclick="playAudio()">🔊 Escuchar</button>
+        </div>
+        <div id="exercise-container" class="exercise-card" style="display: none;">
+            <div class="exercise-title" id="exercise-title">Ejercicio 1</div>
+            <div id="exercise-question" style="font-size: 24px; margin-bottom: 20px; font-weight: bold;"></div>
+            <div id="exercise-content"></div>
+            <div id="exercise-result"></div>
+            <div class="exercise-progress">
+                <span id="exercise-count">1</span> de <span id="exercise-total">10</span>
+            </div>
+            <div class="exercise-controls">
+                <button class="exercise-btn" onclick="prevExercise()">← Anterior</button>
+                <button class="exercise-btn mic-btn" id="mic-btn" onclick="toggleMic()">🎤 Hablar</button>
+                <button class="exercise-btn" onclick="nextExercise()">Siguiente →</button>
+            </div>
+        </div>
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="prevLesson()">← Anterior</button>
+            <button class="nav-btn next" onclick="nextLesson()">Siguiente →</button>
+        </div>
+    </div>
+
+    <script>
+        var vocabulary = [
+            { word: "A table for two, please", translation: "Una mesa para dos, por favor", pronunciation: "[a teibol for tu pliz]" },
+            { word: "The menu, please", translation: "El menú, por favor", pronunciation: "[da menju pliz]" },
+            { word: "I'm hungry", translation: "Tengo hambre", pronunciation: "[aim jangri]" },
+            { word: "What do you recommend?", translation: "¿Qué me recomienda?", pronunciation: "[uat du iu recomend]" },
+            { word: "The bill, please", translation: "La cuenta, por favor", pronunciation: "[da bil pliz]" },
+            { word: "Water", translation: "Agua", pronunciation: "[uoter]" },
+            { word: "The check, please", translation: "La cuenta, por favor", pronunciation: "[da chek pliz]" },
+            { word: "Delicious!", translation: "¡Delicioso!", pronunciation: "[dilichs]" },
+            { word: "I'm allergic to...", translation: "Soy alérgico a...", pronunciation: "[aim aleryik tu]" },
+            { word: "Can I pay by card?", translation: "¿Puedo pagar con tarjeta?", pronunciation: "[kan ai pei bai kard]" },
+            { word: "Toast", translation: "Brindis", pronunciation: "[toust]" },
+            { word: "Bon appétit!", translation: "¡Buen provecho!", pronunciation: "[bon apeiti]" },
+            { word: "More bread, please", translation: "Más pan, por favor", pronunciation: "[mor bred pliz]" },
+            { word: "No spicy, please", translation: "Sin picante, por favor", pronunciation: "[nou spaisi pliz]" },
+            { word: "It was amazing!", translation: "¡Fue increíble!", pronunciation: "[it uas ameizing]" }
+        ];
+
+        var phrases = [
+            { phrase: "Do you have a reservation?", translation: "¿Tiene una reservación?" },
+            { phrase: "We'd like to order, please", translation: "Quisiéramos ordenar, por favor" },
+            { phrase: "What would you like to drink?", translation: "¿Qué desea tomar?" },
+            { phrase: "I'm vegetarian", translation: "Soy vegetariano" },
+            { phrase: "Could we have the dessert menu?", translation: "¿Nos puede traer el menú de postres?" },
+            { phrase: "Keep the change", translation: "Quédese con el cambio" },
+            { phrase: "Everything was perfect, thank you", translation: "Todo estuvo perfecto, gracias" },
+            { phrase: "Can I get a receipt, please?", translation: "¿Me puede dar un recibo?" }
+        ];
+
+        var currentSection = 'vocabulary';
+        var currentIndex = 0;
+
+        function showSection(section) {
+            currentSection = section;
+            currentIndex = 0;
+            document.querySelectorAll('.tab').forEach(function(tab) { tab.classList.remove('active'); });
+            document.querySelectorAll('.tab').forEach(function(tab) {
+                var text = tab.textContent;
+                if((section === 'vocabulary' && text.indexOf('Vocabulario') > -1) ||
+                   (section === 'phrases' && text.indexOf('Frases') > -1) ||
+                   (section === 'exercises' && text.indexOf('Ejercicios') > -1)) {
+                    tab.classList.add('active');
+                }
+            });
+            document.querySelector('.nav-buttons').style.display = section === 'exercises' ? 'none' : 'flex';
+            document.getElementById('exercise-container').style.display = section === 'exercises' ? 'block' : 'none';
+            if (section === 'exercises') {
+                document.getElementById('lesson-card').style.display = 'none';
+                loadExercise();
+            } else {
+                document.getElementById('lesson-card').style.display = 'block';
+                updateDisplay();
+            }
+        }
+
+        function updateDisplay() {
+            var data = currentSection === 'vocabulary' ? vocabulary : phrases;
+            var item = data[currentIndex];
+            document.getElementById('word').textContent = item.word || item.phrase;
+            document.getElementById('translation').textContent = item.translation;
+            document.getElementById('pronunciation').textContent = item.pronunciation || '';
+            document.getElementById('pronunciation').style.display = item.pronunciation ? 'block' : 'none';
+            document.getElementById('count').textContent = currentIndex + 1;
+            document.getElementById('total').textContent = data.length;
+            document.getElementById('progress').style.width = ((currentIndex + 1) / data.length * 100) + '%';
+        }
+
+        function nextLesson() {
+            if (currentSection === 'vocabulary') {
+                if (currentIndex < vocabulary.length - 1) { currentIndex++; updateDisplay(); }
+                else { currentSection = 'phrases'; currentIndex = 0; document.querySelectorAll('.tab')[1].classList.add('active'); document.querySelectorAll('.tab')[0].classList.remove('active'); updateDisplay(); }
+            } else if (currentSection === 'phrases') {
+                if (currentIndex < phrases.length - 1) { currentIndex++; updateDisplay(); }
+                else { showSection('exercises'); }
+            } else if (currentSection === 'exercises') {
+                if (exerciseIndex < exercises.length - 1) { exerciseIndex++; loadExercise(); }
+                else { window.location.href = 'ingles-4.html'; }
+            }
+        }
+
+        function prevLesson() {
+            if (currentSection === 'vocabulary') {
+                if (currentIndex > 0) { currentIndex--; updateDisplay(); }
+            } else if (currentSection === 'phrases') {
+                if (currentIndex > 0) { currentIndex--; updateDisplay(); }
+                else { currentSection = 'vocabulary'; currentIndex = vocabulary.length - 1; document.querySelectorAll('.tab')[0].classList.add('active'); document.querySelectorAll('.tab')[1].classList.remove('active'); updateDisplay(); }
+            } else if (currentSection === 'exercises') {
+                if (exerciseIndex > 0) { exerciseIndex--; loadExercise(); }
+                else { currentSection = 'phrases'; currentIndex = phrases.length - 1; document.querySelectorAll('.tab')[2].classList.remove('active'); document.querySelectorAll('.tab')[1].classList.add('active'); showSection('phrases'); }
+            }
+        }
+
+        function playAudio() {
+            var text;
+            if (currentSection === 'exercises') {
+                var ex = exercises[exerciseIndex];
+                text = ex.audioText || ex.answer;
+            } else {
+                var data = currentSection === 'vocabulary' ? vocabulary : phrases;
+                text = data[currentIndex].word || data[currentIndex].phrase;
+            }
+            if ('speechSynthesis' in window) { 
+                speechSynthesis.cancel(); 
+                var utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.8;
+                speechSynthesis.speak(utterance); 
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            document.querySelector('.theme-toggle').textContent = isLight ? '☀️' : '🌙';
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+
+        if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
+        updateDisplay();
+
+        var exercises = [
+            { type: 'speak', question: 'Di: "A table for two"', answer: 'a table for two', audioText: 'a table for two' },
+            { type: 'speak', question: 'Di: "The menu please"', answer: 'the menu', audioText: 'the menu please' },
+            { type: 'speak', question: 'Di: "I am hungry"', answer: 'i am hungry', audioText: 'i am hungry' },
+            { type: 'speak', question: 'Di: "The bill please"', answer: 'the bill', audioText: 'the bill please' },
+            { type: 'speak', question: 'Di: "Delicious"', answer: 'delicious', audioText: 'delicious' },
+            { type: 'choice', question: '¿Qué significa "Water"?', answer: 'agua', options: ['agua', 'fuego', 'tierra', 'aire'], audioText: 'water' },
+            { type: 'choice', question: '¿Cómo dices "La cuenta"?', answer: 'the bill', options: ['the menu', 'the bill', 'the water', 'the food'], audioText: 'the bill' },
+            { type: 'choice', question: '¿Qué significa "I am hungry"?', answer: 'tengo hambre', options: ['tengo hambre', 'tengo sed', 'tengo sueño', 'tengo prisa'], audioText: 'i am hungry' },
+            { type: 'choice', question: 'Completa: "A table for ___ please"', answer: 'two', options: ['two', 'three', 'four', 'five'], audioText: 'a table for two please' },
+            { type: 'choice', question: '¿Qué significa "Bon appétit"?', answer: 'buen provecho', options: ['buen provecho', 'buenas noches', 'buena suerte', 'buen viaje'], audioText: 'bon appetite' }
+        ];
+
+        var exerciseIndex = 0;
+        var isListening = false;
+        var recognition = null;
+
+        function initSpeech() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SR();
+                recognition.lang = 'en-US';
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript.toLowerCase().trim();
+                    checkSpeech(transcript);
+                };
+                recognition.onend = function() {
+                    document.getElementById('mic-btn').classList.remove('recording');
+                    isListening = false;
+                };
+            }
+        }
+
+        function toggleMic() {
+            if (!recognition) initSpeech();
+            if (isListening) { recognition.stop(); }
+            else { document.getElementById('mic-btn').classList.add('recording'); isListening = true; recognition.start(); }
+        }
+
+        function loadExercise() {
+            var ex = exercises[exerciseIndex];
+            document.getElementById('exercise-title').textContent = 'Ejercicio ' + (exerciseIndex + 1);
+            document.getElementById('exercise-question').textContent = ex.question;
+            document.getElementById('exercise-count').textContent = exerciseIndex + 1;
+            document.getElementById('exercise-total').textContent = exercises.length;
+            document.getElementById('exercise-result').innerHTML = '';
+
+            if (ex.type === 'speak') {
+                document.getElementById('mic-btn').style.display = 'inline-block';
+                document.getElementById('exercise-content').innerHTML = '<p style="color:#9ca3af;margin-bottom:15px;">Presiona el micrófono y dice la palabra o frase.</p><button class="exercise-btn" onclick="playAudio()">🔊 Escuchar</button>';
+            } else {
+                document.getElementById('mic-btn').style.display = 'none';
+                document.getElementById('exercise-content').innerHTML = '<div class="options-grid">' + 
+                    ex.options.map(function(opt) { return '<button class="option-btn" onclick="selectOption(this,\'' + opt + '\')">' + opt + '</button>'; }).join('') + '</div>';
+            }
+        }
+
+        function selectOption(btn, value) {
+            var buttons = document.querySelectorAll('.option-btn');
+            for (var i = 0; i < buttons.length; i++) {
+                buttons[i].classList.remove('selected');
+            }
+            btn.classList.add('selected');
+            checkAnswer(value);
+        }
+
+        function checkAnswer(userAnswer) {
+            var ex = exercises[exerciseIndex];
+            var isCorrect = false;
+
+            if (userAnswer) {
+                var answer = ex.answer.toLowerCase().trim();
+                var user = userAnswer.toLowerCase().trim();
+                isCorrect = user.indexOf(answer) > -1 || answer.indexOf(user) > -1;
+            }
+
+            var resultDiv = document.getElementById('exercise-result');
+            var selectedBtn = document.querySelector('.option-btn.selected');
+            if (isCorrect) {
+                resultDiv.innerHTML = '<div class="result-msg correct">✓ ¡Correcto!</div>';
+                if (selectedBtn) selectedBtn.classList.add('correct');
+            } else {
+                resultDiv.innerHTML = '<div class="result-msg incorrect">✗ La respuesta era: ' + ex.answer + '</div>';
+                if (selectedBtn) selectedBtn.classList.add('incorrect');
+            }
+        }
+
+        function checkSpeech(transcript) {
+            var ex = exercises[exerciseIndex];
+            var answer = ex.answer.toLowerCase().trim();
+            var user = transcript.toLowerCase().trim();
+            var isCorrect = user.indexOf(answer) > -1 || answer.indexOf(user) > -1 || levenshtein(user, answer) <= 2;
+
+            var resultDiv = document.getElementById('exercise-result');
+            if (isCorrect) {
+                resultDiv.innerHTML = '<div class="result-msg correct">✓ ¡Muy bien! Dijiste: "' + transcript + '"</div>';
+            } else {
+                resultDiv.innerHTML = '<div class="result-msg incorrect">✗ Se esperaba: "' + ex.answer + '", entendí: "' + transcript + '"</div>';
+            }
+        }
+
+        function prevExercise() {
+            if (exerciseIndex > 0) {
+                exerciseIndex--;
+                loadExercise();
+            }
+        }
+
+        function nextExercise() {
+            if (exerciseIndex < exercises.length - 1) {
+                exerciseIndex++;
+                loadExercise();
+            } else {
+                window.location.href = 'ingles-4.html';
+            }
+        }
+
+        function levenshtein(a, b) {
+            if (a.length === 0) return b.length;
+            if (b.length === 0) return a.length;
+            var matrix = [];
+            for (var i = 0; i <= b.length; i++) matrix[i] = [i];
+            for (var j = 0; j <= a.length; j++) matrix[0][j] = j;
+            for (var i = 1; i <= b.length; i++) {
+                for (var j = 1; j <= a.length; j++) {
+                    if (b.charAt(i-1) === a.charAt(j-1)) matrix[i][j] = matrix[i-1][j-1];
+                    else matrix[i][j] = Math.min(matrix[i-1][j-1], matrix[i][j-1], matrix[i-1][j]) + 1;
+                }
+            }
+            return matrix[b.length][a.length];
+        }
+    </script>
+
+    <div id="paywallOverlay" class="paywall-overlay" style="display:none;">
+        <div class="paywall-box">
+            <div class="icon">🔒</div>
+            <h2>Contenido Bloqueado</h2>
+            <p>Este contenido requiere el curso completo. Desbloquea para acceder a todas las lecciones.</p>
+            <a href="pago.html?course=ingles-7-dias" class="btn-unlock">💳 Desbloquear por $7 USD</a>
+            <a href="ingles-7-dias.html" class="back-link">← Volver al curso</a>
+        </div>
+    </div>
+
+    <footer class="footer"><p>&copy; 2026 Seven App</p></footer>
+    <script>
+var courseId = 'ingles-7-dias';
+        async function checkAccess() {
+            var purchased = JSON.parse(localStorage.getItem('sevenPurchased') || '[]');
+            if (purchased.indexOf(courseId) === -1) {
+                document.getElementById('paywallOverlay').style.display = 'flex';
+            }
+        }
+        checkAccess();
+    </script>
+</body>
+</html>

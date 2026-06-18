@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seven App - MK Día 7: Plan de Marketing</title>
+    <link rel="icon" href="assets/favicon.png">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --accent-primary: #6366f1;
+            --accent-secondary: #818cf8;
+            --accent-cyan: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border: #2a2a3a;
+        }
+        body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); margin: 0; padding: 0; padding-top: 80px; line-height: 1.6; position: relative; }
+        body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 20% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 70%); pointer-events: none; z-index: -1; }
+        h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; }
+        .header-bar { position: fixed; top: 0; left: 0; right: 0; background: rgba(18, 18, 26, 0.95); backdrop-filter: blur(20px); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); z-index: 100; }
+        .header-bar img { height: 35px; cursor: pointer; transition: transform 0.3s ease; }
+        .header-bar img:hover { transform: scale(1.1); }
+        .theme-toggle, .home-btn { background: var(--bg-tertiary); color: white; border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; cursor: pointer; text-decoration: none; font-size: 14px; transition: all 0.3s ease; }
+        .theme-toggle:hover, .home-btn:hover { background: var(--accent-primary); border-color: var(--accent-primary); }
+        .container { max-width: 720px; margin: 0 auto; padding: 20px; }
+        .day-title { text-align: center; margin-bottom: 40px; padding: 40px 20px; background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%); border-radius: 20px; margin-top: 20px; }
+        .day-title h1 { background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0 0 12px 0; font-size: 32px; }
+        .day-title p { color: var(--text-secondary); margin: 0; font-size: 18px; }
+        .progress-bar { background: var(--bg-tertiary); height: 8px; border-radius: 4px; margin: 25px 0; overflow: hidden; border: 1px solid var(--border); }
+        .progress-fill { background: linear-gradient(90deg, var(--accent-primary), var(--accent-cyan)); height: 100%; width: 0%; transition: width 0.4s ease; border-radius: 4px; }
+        .lesson-count { text-align: center; color: var(--text-muted); font-size: 14px; margin: 15px 0; }
+        .lesson-count span { color: var(--accent-primary); font-weight: 600; }
+        .lesson-card { background: var(--bg-secondary); border-radius: 20px; padding: 35px; margin: 25px 0; border: 1px solid var(--border); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2); transition: all 0.3s ease; }
+        .lesson-card:hover { border-color: var(--accent-primary); box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15); }
+        .lesson-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; color: var(--accent-cyan); display: flex; align-items: center; gap: 12px; }
+        .lesson-title::before { content: ''; width: 4px; height: 28px; background: linear-gradient(180deg, var(--accent-primary), var(--accent-cyan)); border-radius: 2px; }
+        .lesson-text { font-size: 16px; line-height: 1.85; color: var(--text-secondary); margin-bottom: 20px; }
+        .lesson-text strong { color: var(--success); font-weight: 600; }
+        .lesson-example { background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.05)); border-left: 4px solid var(--accent-primary); padding: 24px; margin: 25px 0; border-radius: 0 16px 16px 0; position: relative; overflow: hidden; }
+        .lesson-example::before { content: '💡'; position: absolute; top: 12px; right: 16px; font-size: 24px; opacity: 0.3; }
+        .lesson-example-title { color: var(--accent-primary); font-weight: 700; margin-bottom: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .lesson-example p { margin: 0; color: var(--text-primary); font-size: 15px; line-height: 1.75; }
+        .lesson-warning { background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.05)); border-left: 4px solid var(--warning); padding: 24px; margin: 25px 0; border-radius: 0 16px 16px 0; position: relative; overflow: hidden; }
+        .lesson-warning::before { content: '⚠️'; position: absolute; top: 12px; right: 16px; font-size: 24px; opacity: 0.3; }
+        .lesson-warning-title { color: var(--warning); font-weight: 700; margin-bottom: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .lesson-warning p { margin: 0; color: #fcd34d; font-size: 15px; line-height: 1.75; }
+        .checklist-item { display: flex; gap: 15px; margin: 25px 0; align-items: flex-start; background: var(--bg-tertiary); padding: 20px; border-radius: 14px; border: 1px solid var(--border); transition: all 0.3s ease; }
+        .checklist-item:hover { border-color: var(--accent-primary); transform: translateX(5px); }
+        .checklist-box { width: 28px; height: 28px; border: 2px solid var(--accent-primary); border-radius: 8px; flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: all 0.3s ease; }
+        .checklist-box.checked { background: var(--accent-primary); }
+        .checklist-text { flex: 1; }
+        .checklist-text h4 { margin: 0 0 8px 0; color: var(--text-primary); font-size: 17px; }
+        .checklist-text p { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.6; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 40px; gap: 15px; }
+        .nav-btn { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); padding: 14px 28px; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: 500; text-decoration: none; transition: all 0.3s ease; flex: 1; text-align: center; }
+        .nav-btn:hover { background: var(--bg-secondary); border-color: var(--accent-primary); }
+        .nav-btn.next { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); border: none; color: white; }
+        .nav-btn.next:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4); }
+        .footer { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 14px; border-top: 1px solid var(--border); margin-top: 60px; }
+        .paywall-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(10,10,15,0.95); z-index:1000; display:flex; align-items:center; justify-content:center; }
+        .paywall-box { background:var(--bg-secondary); border:1px solid var(--border); border-radius:20px; padding:40px; text-align:center; max-width:400px; margin:20px; }
+        .paywall-box .icon { font-size:64px; margin-bottom:16px; }
+        .paywall-box h2 { color:var(--accent-primary); margin-bottom:12px; }
+        .paywall-box p { color:var(--text-secondary); margin-bottom:24px; }
+        .paywall-box .btn-unlock { display:inline-block; background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary)); color:white; padding:14px 32px; border-radius:10px; text-decoration:none; font-weight:600; }
+        .paywall-box .back-link { display:block; margin-top:16px; color:var(--text-muted); text-decoration:none; }
+        body.light-mode { --bg-primary: #f8fafc; --bg-secondary: #ffffff; --bg-tertiary: #f1f5f9; --text-primary: #0f172a; --text-secondary: #475569; --text-muted: #94a3b8; --border: #e2e8f0; }
+        body.light-mode .lesson-card { box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08); }
+        @media (max-width: 600px) { .container { padding: 15px; } .lesson-card { padding: 25px 20px; border-radius: 16px; } .day-title h1 { font-size: 26px; } .nav-buttons { flex-direction: column; } .nav-btn { width: 100%; } }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <img src="assets/logo.png" onclick="window.location.href='index.html'" alt="Seven App">
+        <div style="display: flex; gap: 10px;">
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            <a href="marketing-digital.html" class="home-btn">← Volver</a>
+            <a href="index.html" class="home-btn">🏠 Inicio</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="day-title">
+            <h1>Tu Plan de Marketing Completo</h1>
+            <p>7 días de fundamentos: Ahora integra todo</p>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+        <div class="lesson-count">Lección <span id="count">1</span> de <span id="total">3</span></div>
+
+        <div class="lesson-card" id="lesson1">
+            <div class="lesson-title">Plan de Marketing: Estructura completa</div>
+            <div class="lesson-text">
+                Un plan de marketing sin estructura es solo una lista de deseos. Necesitas un documento estructurado que guíe todas tus acciones y permita medir progreso. Aquí está la estructura de un plan de marketing completo.
+            </div>
+            <div class="lesson-text">
+                <strong>Partes esenciales de un plan de marketing:</strong><br><br>
+                <strong>1. Análisis de situación:</strong><br>
+                - Quién eres y qué ofreces<br>
+                - Tu audiencia objetivo (buyer persona)<br>
+                - Análisis de competencia<br>
+                - SWOT (Fortalezas, Debilidades, Oportunidades, Amenazas)<br><br>
+                <strong>2. Objetivos SMART:</strong><br>
+                - Específicos y medibles<br>
+                - Con deadline<br>
+                - Alcanzables pero ambiciosos<br><br>
+                <strong>3. Estrategia:</strong><br>
+                - Canales que usarás<br>
+                - Posicionamiento vs competencia<br>
+                - Propuesta de valor única<br><br>
+                <strong>4. Tácticas:</strong><br>
+                - Acciones específicas por canal<br>
+                - Calendario de implementación<br>
+                - Responsable por acción<br><br>
+                <strong>5. Presupuesto:</strong><br>
+                - Asignación por canal<br>
+                - Recursos necesarios<br><br>
+                <strong>6. Métricas y KPIs:</strong><br>
+                - Qué medirás<br>
+                - Cada cuánto<br>
+                - Qué es éxito
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p><strong>Objetivo:</strong> "Generar $30,000 en ventas en 6 meses"<br>
+                <strong>Estrategia:</strong> SEO + Email + Instagram Ads<br>
+                <strong>KPIs:</strong> 500 visitas/mes orgánicas, 2,000 suscriptores email, ROAS 4x en ads<br>
+                <strong>Presupuesto:</strong> $2,000/mes total ($800 SEO, $500 email tools, $700 ads)<br>
+                <strong>Métricas mensuales:</strong> Traffic, leads, conversiones, CAC, ROI</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Hacer un plan demasiado complejo que nunca se implementa. Empieza simple: 3-5 objetivos claros, 2-3 canales principales, acciones específicas. Puedes expandir después. Un plan simple ejecutado es mejor que un plan perfecto archivado.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson2">
+            <div class="lesson-title">Tu checklist de implementación inmediata</div>
+            <div class="lesson-text">
+                Has aprendido mucho en estos 7 días. Ahora es hora de action. Este checklist te guía paso a paso para implementar lo esencial.
+            </div>
+            <div class="checklist-item">
+                <div class="checklist-box" onclick="this.classList.toggle('checked')"></div>
+                <div class="checklist-text">
+                    <h4>Definir buyer persona</h4>
+                    <p>Documenta quién es tu cliente ideal con demographics, dolores, y deseos.</p>
+                </div>
+            </div>
+            <div class="checklist-item">
+                <div class="checklist-box" onclick="this.classList.toggle('checked')"></div>
+                <div class="checklist-text">
+                    <h4>Elegir 2-3 canales principales</h4>
+                    <p>No todos. Selecciona donde está tu audiencia y tienes recursos.</p>
+                </div>
+            </div>
+            <div class="checklist-item">
+                <div class="checklist-box" onclick="this.classList.toggle('checked')"></div>
+                <div class="checklist-text">
+                    <h4>Crear lead magnet</h4>
+                    <p>Un recurso valioso que capture emails de tu audiencia.</p>
+                </div>
+            </div>
+            <div class="checklist-item">
+                <div class="checklist-box" onclick="this.classList.toggle('checked')"></div>
+                <div class="checklist-text">
+                    <h4>Configurar tracking básico</h4>
+                    <p>Google Analytics, pixel de Meta, o las herramientas de tu plataforma.</p>
+                </div>
+            </div>
+            <div class="checklist-item">
+                <div class="checklist-box" onclick="this.classList.toggle('checked')"></div>
+                <div class="checklist-text">
+                    <h4>Definir 3 KPIs principales</h4>
+                    <p>Métricas específicas que trackearás semanalmente.</p>
+                </div>
+            </div>
+            <div class="checklist-item">
+                <div class="checklist-box" onclick="this.classList.toggle('checked')"></div>
+                <div class="checklist-text">
+                    <h4>Establecer presupuesto realista</h4>
+                    <p>Cuánto puedes invertir en ads y herramientas mensualmente.</p>
+                </div>
+            </div>
+            <div class="checklist-item">
+                <div class="checklist-box" onclick="this.classList.toggle('checked')"></div>
+                <div class="checklist-text">
+                    <h4>Crear calendario editorial</h4>
+                    <p>Planifica contenido para las próximas 4 semanas.</p>
+                </div>
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Recuerda</div>
+                <p>No necesitas hacer todo hoy. Elige la tarea más importante, hazla ahora, mañana la siguiente. En una semana tendrás los fundamentos de tu estrategia funcionando.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson3">
+            <div class="lesson-title">Errores fatales que destruyen estrategias</div>
+            <div class="lesson-text">
+                Conoces los fundamentos. Ahora evita los errores que hacen que incluso marketers con buen conocimiento fracasen.
+            </div>
+            <div class="lesson-text">
+                <strong>Error #1: Sin presupuesto definido:</strong><br>
+                "Voy a gastar lo que pueda" lleva a gastar sin rumbo. Define cuánto puedes invertir y distribúyelo estratégicamente.<br><br>
+                <strong>Error #2: Sin sistema de tracking:</strong><br>
+                "No sé qué funciona porque no mido nada". Sin datos, estás adivinando. Implementa tracking desde el día uno.<br><br>
+                <strong>Error #3: Querer todo inmediatamente:</strong><br>
+                SEO toma 6-12 meses para ver resultados significativos. Marketing efectivo es maratón, no sprint.<br><br>
+                <strong>Error #4: Saltar canales sin dominar uno:</strong><br>
+                "Voy a estar en Instagram, TikTok, LinkedIn, YouTube, email, y blog". Difunde tu energía y no destaques en ningún lado.<br><br>
+                <strong>Error #5: Ignorar datos y seguir instinto:</strong><br>
+                "Creo que este anuncio funciona mejor" vs "Este anuncio tiene 5% CTR vs 2% del otro". Los datos no mienten.<br><br>
+                <strong>Error #6: No optimizar basado en resultados:</strong><br>
+                Hacer lo mismo esperando resultados diferentes es locura. Si algo no funciona después de suficiente testing, cámbialo.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Recursos para continuar aprendiendo</div>
+                <p><strong>Blogs:</strong> HubSpot Blog, Neil Patel, Social Media Examiner<br>
+                <strong>Cursos:</strong> Google Digital Marketing (gratis), Meta Blueprint (gratis)<br>
+                <strong>YouTube:</strong> Marketing Digital con Juan Carlos, Exportos<br>
+                <strong>Podcasts:</strong> Marketing Personal, Cuéntame FM</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Recordatorio final</div>
+                <p>El conocimiento sin acción es inútil. Guarda este checklist, revísalo mensualmente, y haz accountability. El mejor marketer no es el que más sabe, es el que más ejecuta. Ahora ve y hazlo.</p>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="prevLesson()">← Anterior</button>
+            <button class="nav-btn next" onclick="nextLesson()">🏆 Finalizar</button>
+        </div>
+    </div>
+
+    <footer class="footer"><p>&copy; 2026 Seven App</p></footer>
+
+    <div id="paywallOverlay" class="paywall-overlay" style="display:none;">
+        <div class="paywall-box">
+            <div class="icon">🔒</div>
+            <h2>Contenido Bloqueado</h2>
+            <p>Este contenido requiere el curso completo. Desbloquea para acceder a todas las lecciones.</p>
+            <a href="pago.html?course=marketing-digital" class="btn-unlock">💳 Desbloquear por $7 USD</a>
+            <a href="marketing-digital.html" class="back-link">← Volver al curso</a>
+        </div>
+    </div>
+
+    <script>
+        const lessons = 3;
+        let currentLesson = 1;
+        const courseId = 'marketing-digital';
+
+        function updateDisplay() {
+            document.getElementById('count').textContent = currentLesson;
+            document.getElementById('total').textContent = lessons;
+            document.getElementById('progress').style.width = (currentLesson / lessons * 100) + '%';
+            for (let i = 1; i <= lessons; i++) {
+                const card = document.getElementById('lesson' + i);
+                if (card) {
+                    card.style.display = i === currentLesson ? 'block' : 'none';
+                }
+            }
+        }
+
+        function nextLesson() {
+            if (currentLesson < lessons) {
+                currentLesson++;
+                updateDisplay();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                window.location.href = 'marketing-digital.html';
+            }
+        }
+
+        function prevLesson() {
+            if (currentLesson > 1) {
+                currentLesson--;
+                updateDisplay();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                window.location.href = 'mk-6.html';
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            document.querySelector('.theme-toggle').textContent = isLight ? '☀️' : '🌙';
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+
+        async function checkAccess() {
+            const purchased = JSON.parse(localStorage.getItem('sevenPurchased') || '[]');
+            if (!purchased.includes(courseId)) {
+                document.getElementById('paywallOverlay').style.display = 'flex';
+            }
+        }
+        updateDisplay();
+        checkAccess();
+    </script>
+</body>
+</html>

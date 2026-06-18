@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Manager en 7 Días - Seven App</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="assets/favicon.png">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <script src="capacitor-bridge.js"></script>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <img src="assets/logo.png" class="logo" onclick="startCourse()" alt="Seven App">
+            <div style="display: flex; align-items: center;">
+                <button class="theme-toggle" onclick="toggleTheme()" title="Cambiar modo">🌙</button>
+                <button class="btn-primary" onclick="startCourse()">Comenzar Gratis</button>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-background">
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+            <div class="orb orb-3"></div>
+        </div>
+        <div class="hero-content">
+            <span class="badge">📱 Redes Sociales</span>
+            <h1>Community Manager en <span class="gradient-text">7 Días</span></h1>
+            <p class="hero-subtitle">Domina la gestión de redes sociales</p>
+            <button class="btn-primary btn-large" onclick="startCourse()">Comenzar Gratis</button>
+        </div>
+    </section>
+
+    <section class="course-overview">
+        <div class="section-header">
+            <h2>El Curso: Community Manager</h2>
+            <p>Contenido estructurado para ser un CM profesional</p>
+        </div>
+        
+        <div class="days-container">
+            <div class="day-row">
+                <div class="day-card free" onclick="openDay(1)">
+                    <div class="day-num">1</div>
+                    <div class="day-info">
+                        <h3>Fundamentos del CM</h3>
+                        <p>Rol, responsabilidades y habilidades clave</p>
+                    </div>
+                    <span class="day-badge">GRATIS</span>
+                </div>
+                
+                <div class="day-card" onclick="openDay(2)">
+                    <div class="day-num">2</div>
+                    <div class="day-info">
+                        <h3>Instagram</h3>
+                        <p>Reels, Stories, hashtags</p>
+                    </div>
+                    <span class="day-badge">$7</span>
+                </div>
+                
+                <div class="day-card" onclick="openDay(3)">
+                    <div class="day-num">3</div>
+                    <div class="day-info">
+                        <h3>TikTok</h3>
+                        <p>Videos virales y algoritmo</p>
+                    </div>
+                    <span class="day-badge">$7</span>
+                </div>
+                
+                <div class="day-card" onclick="openDay(4)">
+                    <div class="day-num">4</div>
+                    <div class="day-info">
+                        <h3>LinkedIn</h3>
+                        <p>Networking profesional y B2B</p>
+                    </div>
+                    <span class="day-badge">$7</span>
+                </div>
+                
+                <div class="day-card" onclick="openDay(5)">
+                    <div class="day-num">5</div>
+                    <div class="day-info">
+                        <h3>Métricas y Analytics</h3>
+                        <p>KPIs, ROI y engagement</p>
+                    </div>
+                    <span class="day-badge">$7</span>
+                </div>
+                
+                <div class="day-card" onclick="openDay(6)">
+                    <div class="day-num">6</div>
+                    <div class="day-info">
+                        <h3>Creación de Contenido</h3>
+                        <p>Tipos, formatos y herramientas</p>
+                    </div>
+                    <span class="day-badge">$7</span>
+                </div>
+                
+                <div class="day-card" onclick="openDay(7)">
+                    <div class="day-num">7</div>
+                    <div class="day-info">
+                        <h3>Plan de Acción</h3>
+                        <p>Tu roadmap para empezar</p>
+                    </div>
+                    <span class="day-badge">$7</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="pricing" id="pricing">
+        <div class="section-header">
+            <h2>Desbloquea el Curso Completo</h2>
+            <p>Accede a los días 2-7 por solo:</p>
+        </div>
+        
+        <div class="price-tag">$7 USD</div>
+        
+        <div class="paypal-box">
+            <a href="https://www.paypal.com/ncp/payment/DCBZ4CJ8WXZLA" 
+               target="_blank" 
+               class="paypal-link">
+                💳 Pagar con PayPal
+            </a>
+        </div>
+        
+        <p style="color: #6b7280; font-size: 12px; margin-top: 15px;">🔒 Pago seguro</p>
+    </section>
+
+    <footer class="footer">
+        <p>&copy; 2026 Seven App</p>
+        <p style="margin-top: 8px;">📧 <a href="mailto:info@seven-app.com" style="color: #6366f1; text-decoration: none;">info@seven-app.com</a></p>
+    </footer>
+
+    <script>
+        function toggleTheme() {
+            const body = document.body;
+            const btn = document.querySelector('.theme-toggle');
+            if (body.classList.contains('light-mode')) {
+                body.classList.remove('light-mode');
+                btn.textContent = '🌙';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.add('light-mode');
+                btn.textContent = '☀️';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+        
+        function loadTheme() {
+            const saved = localStorage.getItem('theme');
+            if (saved === 'light') {
+                document.body.classList.add('light-mode');
+                document.querySelector('.theme-toggle').textContent = '☀️';
+            }
+        }
+        
+        loadTheme();
+        
+        function startCourse() {
+            openDay(1);
+        }
+        
+        async function openDay(day) {
+            if (day === 1) {
+                window.location.href = 'cm-1.html';
+            } else {
+                const purchased = JSON.parse(localStorage.getItem('sevenPurchased') || '[]');
+                if (purchased.includes('community-manager')) {
+                    window.location.href = 'cm-' + day + '.html';
+                } else if (window.CapacitorBridge && window.CapacitorBridge.isCapacitor) {
+                    try {
+                        await window.CapacitorBridge.initRevenueCat();
+                        const hasAccess = await window.CapacitorBridge.checkCourseAccess('community-manager');
+                        if (hasAccess) {
+                            purchased.push('community-manager');
+                            localStorage.setItem('sevenPurchased', JSON.stringify(purchased));
+                            window.location.href = 'cm-' + day + '.html';
+                        } else {
+                            window.location.href = 'pago.html?course=community-manager';
+                        }
+                    } catch (e) {
+                        window.location.href = 'pago.html?course=community-manager';
+                    }
+                } else {
+                    window.location.href = 'pago.html?course=community-manager';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

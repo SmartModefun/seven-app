@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seven App - MK Día 5: Email Marketing</title>
+    <link rel="icon" href="assets/favicon.png">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --accent-primary: #6366f1;
+            --accent-secondary: #818cf8;
+            --accent-cyan: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border: #2a2a3a;
+        }
+        body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); margin: 0; padding: 0; padding-top: 80px; line-height: 1.6; position: relative; }
+        body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 20% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 70%); pointer-events: none; z-index: -1; }
+        h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; }
+        .header-bar { position: fixed; top: 0; left: 0; right: 0; background: rgba(18, 18, 26, 0.95); backdrop-filter: blur(20px); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); z-index: 100; }
+        .header-bar img { height: 35px; cursor: pointer; transition: transform 0.3s ease; }
+        .header-bar img:hover { transform: scale(1.1); }
+        .theme-toggle, .home-btn { background: var(--bg-tertiary); color: white; border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; cursor: pointer; text-decoration: none; font-size: 14px; transition: all 0.3s ease; }
+        .theme-toggle:hover, .home-btn:hover { background: var(--accent-primary); border-color: var(--accent-primary); }
+        .container { max-width: 720px; margin: 0 auto; padding: 20px; }
+        .day-title { text-align: center; margin-bottom: 40px; padding: 40px 20px; background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%); border-radius: 20px; margin-top: 20px; }
+        .day-title h1 { background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0 0 12px 0; font-size: 32px; }
+        .day-title p { color: var(--text-secondary); margin: 0; font-size: 18px; }
+        .progress-bar { background: var(--bg-tertiary); height: 8px; border-radius: 4px; margin: 25px 0; overflow: hidden; border: 1px solid var(--border); }
+        .progress-fill { background: linear-gradient(90deg, var(--accent-primary), var(--accent-cyan)); height: 100%; width: 0%; transition: width 0.4s ease; border-radius: 4px; }
+        .lesson-count { text-align: center; color: var(--text-muted); font-size: 14px; margin: 15px 0; }
+        .lesson-count span { color: var(--accent-primary); font-weight: 600; }
+        .lesson-card { background: var(--bg-secondary); border-radius: 20px; padding: 35px; margin: 25px 0; border: 1px solid var(--border); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2); transition: all 0.3s ease; }
+        .lesson-card:hover { border-color: var(--accent-primary); box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15); }
+        .lesson-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; color: var(--accent-cyan); display: flex; align-items: center; gap: 12px; }
+        .lesson-title::before { content: ''; width: 4px; height: 28px; background: linear-gradient(180deg, var(--accent-primary), var(--accent-cyan)); border-radius: 2px; }
+        .lesson-text { font-size: 16px; line-height: 1.85; color: var(--text-secondary); margin-bottom: 20px; }
+        .lesson-text strong { color: var(--success); font-weight: 600; }
+        .lesson-example { background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.05)); border-left: 4px solid var(--accent-primary); padding: 24px; margin: 25px 0; border-radius: 0 16px 16px 0; position: relative; overflow: hidden; }
+        .lesson-example::before { content: '💡'; position: absolute; top: 12px; right: 16px; font-size: 24px; opacity: 0.3; }
+        .lesson-example-title { color: var(--accent-primary); font-weight: 700; margin-bottom: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .lesson-example p { margin: 0; color: var(--text-primary); font-size: 15px; line-height: 1.75; }
+        .lesson-warning { background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.05)); border-left: 4px solid var(--warning); padding: 24px; margin: 25px 0; border-radius: 0 16px 16px 0; position: relative; overflow: hidden; }
+        .lesson-warning::before { content: '⚠️'; position: absolute; top: 12px; right: 16px; font-size: 24px; opacity: 0.3; }
+        .lesson-warning-title { color: var(--warning); font-weight: 700; margin-bottom: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .lesson-warning p { margin: 0; color: #fcd34d; font-size: 15px; line-height: 1.75; }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 40px; gap: 15px; }
+        .nav-btn { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); padding: 14px 28px; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: 500; text-decoration: none; transition: all 0.3s ease; flex: 1; text-align: center; }
+        .nav-btn:hover { background: var(--bg-secondary); border-color: var(--accent-primary); }
+        .nav-btn.next { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); border: none; color: white; }
+        .nav-btn.next:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4); }
+        .footer { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 14px; border-top: 1px solid var(--border); margin-top: 60px; }
+        .paywall-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(10,10,15,0.95); z-index:1000; display:flex; align-items:center; justify-content:center; }
+        .paywall-box { background:var(--bg-secondary); border:1px solid var(--border); border-radius:20px; padding:40px; text-align:center; max-width:400px; margin:20px; }
+        .paywall-box .icon { font-size:64px; margin-bottom:16px; }
+        .paywall-box h2 { color:var(--accent-primary); margin-bottom:12px; }
+        .paywall-box p { color:var(--text-secondary); margin-bottom:24px; }
+        .paywall-box .btn-unlock { display:inline-block; background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary)); color:white; padding:14px 32px; border-radius:10px; text-decoration:none; font-weight:600; }
+        .paywall-box .back-link { display:block; margin-top:16px; color:var(--text-muted); text-decoration:none; }
+        body.light-mode { --bg-primary: #f8fafc; --bg-secondary: #ffffff; --bg-tertiary: #f1f5f9; --text-primary: #0f172a; --text-secondary: #475569; --text-muted: #94a3b8; --border: #e2e8f0; }
+        body.light-mode .lesson-card { box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08); }
+        @media (max-width: 600px) { .container { padding: 15px; } .lesson-card { padding: 25px 20px; border-radius: 16px; } .day-title h1 { font-size: 26px; } .nav-buttons { flex-direction: column; } .nav-btn { width: 100%; } }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <img src="assets/logo.png" onclick="window.location.href='index.html'" alt="Seven App">
+        <div style="display: flex; gap: 10px;">
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            <a href="marketing-digital.html" class="home-btn">← Volver</a>
+            <a href="index.html" class="home-btn">🏠 Inicio</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="day-title">
+            <h1>Email Marketing: Tu Canal Más Rentable</h1>
+            <p>El ROI más alto de todos los canales digitales</p>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+        <div class="lesson-count">Lección <span id="count">1</span> de <span id="total">4</span></div>
+
+        <div class="lesson-card" id="lesson1">
+            <div class="lesson-title">Por qué el email marketing es el rey</div>
+            <div class="lesson-text">
+                El email marketing tiene el ROI más alto de todos los canales de marketing digital. Según estudios recientes, por cada $1 invertido en email marketing, el retorno promedio es de $42. Esto lo convierte en el canal más rentable para prácticamente cualquier negocio.
+            </div>
+            <div class="lesson-text">
+                <strong>Ventajas únicas del email marketing:</strong><br><br>
+                <strong>1. Es TUYO:</strong> A diferencia de redes sociales donde las reglas cambian constantemente y los algoritmos limitan tu alcance, tu lista de emails es un activo que tú controlas. Si mañana Instagram desaparece, pierdes todo tu alcance. Si mañana tu lista de email se enferma... bueno, aún la tienes.<br><br>
+                <strong>2. Directo:</strong> El email llega directamente a la bandeja de entrada de tu suscriptor. No hay algoritmo intermediario decidiendo si tu mensaje se muestra o no.<br><br>
+                <strong>3. Personalizable:</strong> Puedes segmentar tu lista y enviar mensajes específicos a grupos específicos. No hay otra plataforma que permita tanta personalización.<br><br>
+                <strong>4. Medible:</strong> Open rates, click rates, conversiones - todo se trackea fácilmente.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p>Un ecommerce con 10,000 suscriptores envía un email promocionando un producto. Con 20% open rate y 5% click rate: 2,000 personas abrieron el email, 100 hicieron clic, 10 Compraron a $100 = $1,000 de revenue. Costo del email: $50 (plataforma) = ROI de 1,900%. Intenta replicar eso con Facebook Ads.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Enfocarse solo en conseguir nuevos clientes y descuidar la lista existente. Es 7x más caro adquirir un cliente nuevo que vender a uno existente. Tu lista de email es un asset que puede generar revenue repetidamente si la nurtureas correctamente.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson2">
+            <div class="lesson-title">Tipos de emails que debes enviar</div>
+            <div class="lesson-text">
+                No todos los emails son iguales. Diferentes tipos de emails sirven diferentes propósitos en tu estrategia. Una buena mezcla de tipos mantiene engagement y convierte leads en clientes.
+            </div>
+            <div class="lesson-text">
+                <strong>1. Emails de bienvenida:</strong><br>
+                El primer email que recibe un nuevo suscriptor. Establece el tono de la relación. Debe: agradecer, establecer expectativas (cada cuánto enviarás), dar valor inmediato.<br><br>
+                <strong>2. Newsletter:</strong><br>
+                Envío regular (semanal o quincenal) con contenido de valor. Tips, noticias del industry, recursos útiles. Mantiene top of mind.<br><br>
+                <strong>3. Emails promocionales:</strong><br>
+                Ofertas, descuentos, lanzamientos de productos. Max 1-2 por mes para no parecer spam.<br><br>
+                <strong>4. Emails de nurturing:</strong><br>
+                Secuencias automatizadas que educan y construyen confianza. Generalmente 5-10 emails enviados en días específicos después de suscribirse.<br><br>
+                <strong>5. Emails transaccionales:</strong><br>
+                Confirmaciones de pedido, shipping updates, receipts. Estos tienen los mayores open rates.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p><strong>Día 0:</strong> Email de bienvenida + lead magnet prometido<br>
+                <strong>Día 2:</strong> Email de nurturing: "Aquí está el tip #1..."<br>
+                <strong>Día 4:</strong> Email de nurturing: "Tip #2 + caso de éxito"<br>
+                <strong>Día 7:</strong> Newsletter semanal<br>
+                <strong>Día 10:</strong> Email de nurturing: "Tip #3 + recurso bonus"<br>
+                <strong>Día 14:</strong> Promo suave: "Tengo algo que puede ayudarte aún más..."<br>
+                <strong>Día 21:</strong> Newsletter + venta final</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Solo enviar promociones. La gente se suscribe para recibir valor, no spam comercial. La regla: 80% valor (educativo, entretenimiento), 20% promoción. Si solo vendes, tus tasas de apertura caerán y eventualmente will be marked as spam.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson3">
+            <div class="lesson-title">Cómo escribir subject lines que abren emails</div>
+            <div class="lesson-text">
+                El subject line es lo primero que ve tu suscriptor y determina si abre o ignora tu email. Con bandeja de entrada llena de emails, el subject debe destacar en milisegundos.
+            </div>
+            <div class="lesson-text">
+                <strong>Principios de subject lines efectivas:</strong><br><br>
+                <strong>1. Personal:</strong> Incluye el nombre del suscriptor. "María, tu guía está lista" > "Tu guía está lista".<br><br>
+                <strong>2. Curto y específico:</strong> 30-50 caracteres máximo. Evita relleno innecesario.<br><br>
+                <strong>3. Genera curiosidad:</strong> "¿Sabías que...?" o "El error que casi me cuesta $10,000"<br><br>
+                <strong>4. Urgencia genuina:</strong> Solo si es real. "Últimas 24 horas" si realmente es el deadline.<br><br>
+                <strong>5. Valor claro:</strong> "5 tips para [resultado específico]" dice exactamente qué получит.<br><br>
+                <strong>Evita:</strong> TODO EN MAYÚSCULAS, símbolos como $$$ o !!!, palabras spam como "GRATIS" o "Urgente", promesas falsas.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p><strong>❌ Subject malo:</strong> "Newsletter de noviembre" (¿Por qué me importa?)<br>
+                <strong>❌ Subject mediocre:</strong> "5 tips de marketing para aumentar tus ventas" (genérico)<br><br>
+                <strong>✅ Subject efectivo:</strong> "El hack de email que duplicó mis aperturas (en 2 horas)"<br>
+                <strong>✅ Outro efectivo:</strong> "María, el template que pediste está aquí" (personal + valor)<br>
+                <strong>✅ Urgencia real:</strong> "Último día: 40% de descuento" (si es cierto)</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Clickbait que no entrega. Si prometes "El secreto que..." y el contenido es mediocre, destruyes confianza. El subject debe representar honestamente lo que внутри. Si generas opens con títulos engañosos, tendrás bajas tasas de apertura futuras.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson4">
+            <div class="lesson-title">Métricas clave de email marketing</div>
+            <div class="lesson-text">
+                Para mejorar necesitas medir. Estas son las métricas principales que debes trackear en email marketing, qué significan, y qué benchmarks considerar normales.
+            </div>
+            <div class="lesson-text">
+                <strong>1. Open Rate (% de apertura):</strong><br>
+                Porcentaje de suscriptores que abren tu email.<br>
+                Benchmark: 15-25% es promedio, 25%+ es bueno.<br>
+                Influye principalmente: subject line y timing.<br><br>
+                <strong>2. Click Rate (% de clics):</strong><br>
+                Porcentaje de suscriptores que hacen clic en un link.<br>
+                Benchmark: 2-5% es normal, 5%+ es excelente.<br>
+                Influye: relevancia del contenido y claridad del CTA.<br><br>
+                <strong>3. Unsubscribe Rate (% de baja):</strong><br>
+                Porcentaje que se da de baja por email.<br>
+                Benchmark: <0.5% es excelente, >1% indica problema.<br>
+                Si sube, probablemente estás enviando demasiado o contenido no relevante.<br><br>
+                <strong>4. Conversion Rate:</strong><br>
+                Porcentaje que completa la acción deseada (compra, registro).<br>
+                Depende mucho de tu industria y oferta.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p>Email a 10,000 suscriptores:<br>
+                - Open rate 22% = 2,200 abrieron<br>
+                - Click rate 4% = 440 hicieron clic<br>
+                - Conversion rate 3% = 13 compraron<br>
+                - Si cada compra es $100 = $1,300 revenue<br><br>
+                Si mejoras open rate a 28% (mejorando subject):<br>
+                - 2,800 abren → 2,800 x 4% = 112 clics → 3.3 compras = $1,700<br>
+                Un 6% más de open rate = 30% más revenue.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>No segmentar. Enviar el mismo email a toda tu lista es como dar la misma medicina a todos los pacientes. Segmenta por: comportamiento (abrieron emails anteriores?), stage del buyer journey, intereses específicos, o engagement history. Email segmentado outperforms non-segmented significantly.</p>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="prevLesson()">← Anterior</button>
+            <button class="nav-btn next" onclick="nextLesson()">Siguiente →</button>
+        </div>
+    </div>
+
+    <footer class="footer"><p>&copy; 2026 Seven App</p></footer>
+
+    <div id="paywallOverlay" class="paywall-overlay" style="display:none;">
+        <div class="paywall-box">
+            <div class="icon">🔒</div>
+            <h2>Contenido Bloqueado</h2>
+            <p>Este contenido requiere el curso completo. Desbloquea para acceder a todas las lecciones.</p>
+            <a href="pago.html?course=marketing-digital" class="btn-unlock">💳 Desbloquear por $7 USD</a>
+            <a href="marketing-digital.html" class="back-link">← Volver al curso</a>
+        </div>
+    </div>
+
+    <script>
+        const lessons = 4;
+        let currentLesson = 1;
+        const courseId = 'marketing-digital';
+
+        async function checkAccess() {
+            const purchased = JSON.parse(localStorage.getItem('sevenPurchased') || '[]');
+            if (!purchased.includes(courseId)) {
+                document.getElementById('paywallOverlay').style.display = 'flex';
+            }
+        }
+        checkAccess();
+    </script>
+</body>
+</html>

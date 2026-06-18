@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seven App - CM Día 3: TikTok</title>
+    <link rel="icon" href="assets/favicon.png">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg-primary: #0a0a0f; --bg-secondary: #12121a; --bg-tertiary: #1a1a25; --accent-primary: #6366f1; --accent-secondary: #818cf8; --accent-cyan: #06b6d4; --success: #10b981; --warning: #f59e0b; --text-primary: #ffffff; --text-secondary: #9ca3af; --text-muted: #6b7280; --border: #2a2a3a; }
+        body { font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); margin: 0; padding: 0; padding-top: 80px; line-height: 1.6; position: relative; }
+        body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 20% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%), radial-gradient(ellipse at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 70%); pointer-events: none; z-index: -1; }
+        h1, h2, h3, h4 { font-family: 'Outfit', sans-serif; font-weight: 700; }
+        .header-bar { position: fixed; top: 0; left: 0; right: 0; background: rgba(18, 18, 26, 0.95); backdrop-filter: blur(20px); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); z-index: 100; }
+        .header-bar img { height: 35px; cursor: pointer; transition: transform 0.3s ease; }
+        .header-bar img:hover { transform: scale(1.1); }
+        .theme-toggle, .home-btn { background: var(--bg-tertiary); color: white; border: 1px solid var(--border); padding: 8px 16px; border-radius: 8px; cursor: pointer; text-decoration: none; font-size: 14px; transition: all 0.3s ease; }
+        .theme-toggle:hover, .home-btn:hover { background: var(--accent-primary); border-color: var(--accent-primary); }
+        .container { max-width: 720px; margin: 0 auto; padding: 20px; }
+        .day-title { text-align: center; margin-bottom: 40px; padding: 40px 20px; background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%); border-radius: 20px; margin-top: 20px; }
+        .day-title h1 { background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin: 0 0 12px 0; font-size: 32px; }
+        .day-title p { color: var(--text-secondary); margin: 0; font-size: 18px; }
+        .progress-bar { background: var(--bg-tertiary); height: 8px; border-radius: 4px; margin: 25px 0; overflow: hidden; border: 1px solid var(--border); }
+        .progress-fill { background: linear-gradient(90deg, var(--accent-primary), var(--accent-cyan)); height: 100%; width: 0%; transition: width 0.4s ease; border-radius: 4px; }
+        .lesson-count { text-align: center; color: var(--text-muted); font-size: 14px; margin: 15px 0; }
+        .lesson-count span { color: var(--accent-primary); font-weight: 600; }
+        .lesson-card { background: var(--bg-secondary); border-radius: 20px; padding: 35px; margin: 25px 0; border: 1px solid var(--border); box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2); transition: all 0.3s ease; }
+        .lesson-card:hover { border-color: var(--accent-primary); box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15); }
+        .lesson-title { font-size: 22px; font-weight: 700; margin-bottom: 20px; color: var(--accent-cyan); display: flex; align-items: center; gap: 12px; }
+        .lesson-title::before { content: ''; width: 4px; height: 28px; background: linear-gradient(180deg, var(--accent-primary), var(--accent-cyan)); border-radius: 2px; }
+        .lesson-text { font-size: 16px; line-height: 1.85; color: var(--text-secondary); margin-bottom: 20px; }
+        .lesson-text strong { color: var(--success); font-weight: 600; }
+        .lesson-example { background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.05)); border-left: 4px solid var(--accent-primary); padding: 24px; margin: 25px 0; border-radius: 0 16px 16px 0; position: relative; overflow: hidden; }
+        .lesson-example::before { content: '💡'; position: absolute; top: 12px; right: 16px; font-size: 24px; opacity: 0.3; }
+        .lesson-example-title { color: var(--accent-primary); font-weight: 700; margin-bottom: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .lesson-example p { margin: 0; color: var(--text-primary); font-size: 15px; line-height: 1.75; }
+        .lesson-warning { background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.05)); border-left: 4px solid var(--warning); padding: 24px; margin: 25px 0; border-radius: 0 16px 16px 0; position: relative; overflow: hidden; }
+        .lesson-warning::before { content: '⚠️'; position: absolute; top: 12px; right: 16px; font-size: 24px; opacity: 0.3; }
+        .lesson-warning-title { color: var(--warning); font-weight: 700; margin-bottom: 12px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .lesson-warning p { margin: 0; color: #fcd34d; font-size: 15px; line-height: 1.75; }
+        .lesson-step { display: flex; gap: 16px; margin: 25px 0; padding: 20px; background: var(--bg-tertiary); border-radius: 14px; border: 1px solid var(--border); transition: all 0.3s ease; }
+        .lesson-step:hover { border-color: var(--accent-primary); transform: translateX(5px); }
+        .step-number { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); color: white; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; font-size: 16px; font-family: 'Outfit', sans-serif; }
+        .step-content { flex: 1; }
+        .step-content h4 { margin: 0 0 8px 0; color: var(--text-primary); font-size: 17px; }
+        .step-content p { margin: 0; color: var(--text-secondary); font-size: 14px; line-height: 1.65; }
+        .vocab-box { background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.03)); border-radius: 16px; padding: 24px; margin: 25px 0; border: 1px solid rgba(16, 185, 129, 0.2); }
+        .vocab-title { color: var(--success); font-weight: 700; margin-bottom: 16px; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+        .vocab-item { display: flex; gap: 15px; margin-bottom: 12px; font-size: 15px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .vocab-item:last-child { border-bottom: none; margin-bottom: 0; }
+        .vocab-term { color: var(--accent-cyan); font-weight: 600; min-width: 140px; flex-shrink: 0; }
+        .vocab-def { color: var(--text-secondary); }
+        .nav-buttons { display: flex; justify-content: space-between; margin-top: 40px; gap: 15px; }
+        .nav-btn { background: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border); padding: 14px 28px; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: 500; text-decoration: none; transition: all 0.3s ease; flex: 1; text-align: center; }
+        .nav-btn:hover { background: var(--bg-secondary); border-color: var(--accent-primary); }
+        .nav-btn.next { background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary)); border: none; color: white; }
+        .nav-btn.next:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4); }
+        .footer { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 14px; border-top: 1px solid var(--border); margin-top: 60px; }
+        .paywall-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(10,10,15,0.95); z-index:1000; display:flex; align-items:center; justify-content:center; }
+        .paywall-box { background:var(--bg-secondary); border:1px solid var(--border); border-radius:20px; padding:40px; text-align:center; max-width:400px; margin:20px; }
+        .paywall-box .icon { font-size:64px; margin-bottom:16px; }
+        .paywall-box h2 { color:var(--accent-primary); margin-bottom:12px; }
+        .paywall-box p { color:var(--text-secondary); margin-bottom:24px; }
+        .paywall-box .btn-unlock { display:inline-block; background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary)); color:white; padding:14px 32px; border-radius:10px; text-decoration:none; font-weight:600; }
+        .paywall-box .back-link { display:block; margin-top:16px; color:var(--text-muted); text-decoration:none; }
+        body.light-mode { --bg-primary: #f8fafc; --bg-secondary: #ffffff; --bg-tertiary: #f1f5f9; --text-primary: #0f172a; --text-secondary: #475569; --text-muted: #94a3b8; --border: #e2e8f0; }
+        body.light-mode .lesson-card { box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08); }
+        @media (max-width: 600px) { .container { padding: 15px; } .lesson-card { padding: 25px 20px; border-radius: 16px; } .day-title h1 { font-size: 26px; } .nav-buttons { flex-direction: column; } .nav-btn { width: 100%; } }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <img src="assets/logo.png" onclick="window.location.href='index.html'" alt="Seven App">
+        <div style="display: flex; gap: 10px;">
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            <a href="community-manager.html" class="home-btn">← Volver</a>
+            <a href="index.html" class="home-btn">🏠 Inicio</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="day-title">
+            <h1>TikTok para Community Managers</h1>
+            <p>Domina la plataforma que cambió las redes sociales</p>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+        <div class="lesson-count">Lección <span id="count">1</span> de <span id="total">4</span></div>
+
+        <div class="lesson-card" id="lesson1">
+            <div class="lesson-title">Por qué TikTok es diferente a todas las otras redes</div>
+            <div class="lesson-text">
+                TikTok no es solo "otra red social más". Es un cambio paradigmático en cómo consumimos contenido digital. Para entender por qué TikTok funciona tan diferente, necesitas comprender qué lo hace único y por qué los métodos que funcionan en Instagram o YouTube pueden fallar aquí.
+            </div>
+            <div class="lesson-text">
+                <strong>La diferencia fundamental:</strong> La mayoría de redes sociales muestran contenido de las cuentas que sigues. TikTok muestra contenido BASADO EN CONTENIDO, no en seguimientos. Esto significa que si produces contenido bueno, TikTok lo mostrará a millones de personas que NUNCA han visto tu cuenta. Es un equalizer sin precedentes en la historia de las redes sociales.
+            </div>
+            <div class="lesson-text">
+                <strong>El For You Page (FYP):</strong> Este es el corazón de TikTok. Cuando abres TikTok, ves el FYP - una lista infinita de videos elegidos por el algoritmo basándose en LO QUE TE MANTIENE VIENDO, no en quién pubblica. El algoritmo analiza: ¿paraste de ver el video? ¿Lo viste completo? ¿Lo compartiste? ¿Dejaste un comentario? ¿Lo guardaste? Estas señales determinan si tu contenido es "bueno" o no.
+            </div>
+            <div class="lesson-text">
+                <strong>La oportunidad para CMs:</strong> En TikTok, una cuenta con 100 seguidores puede generar un video con 1 millón de vistas. No necesitas una audiencia previa para tener alcance. Esto hace TikTok invaluable para marcas que están empezando o que tienen presupuestos limitados para publicidad.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p>Imagina que gestionas la cuenta de una panadería local. Publicas un Reel mostrando cómo hacer pan artesanal. En Instagram, solo lo verían tus 500 seguidores. En TikTok, el algoritmo puede mostrarlo a personas que buscan "recetas de pan", "panadería artesanal", o que interactúan con contenido similar. Si el video es bueno (alta retención, muchos comentarios), el algoritmo lo sigue empujando hasta 100,000, 500,000 vistas. Todo esto sin pagar un solo centavo en ads.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Tratar TikTok como Instagram. Muchos CMs copian el mismo contenido que publican en Instagram y lo pegan en TikTok. Esto no funciona. TikTok tiene su propia cultura, su propio lenguaje visual, y sus propias expectativas. El contenido que funciona en IG puede morir en TikTok y viceversa.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson2">
+            <div class="lesson-title">Cómo crear el "hook" perfecto en los primeros 3 segundos</div>
+            <div class="lesson-text">
+                En TikTok, los primeros 3 segundos son TODO. Si no captas la atención del espectador inmediatamente, scroll往前走. No hay segunda oportunidad. El "hook" es la técnica para parar el scroll y hacer que la gente quiera ver más.
+            </div>
+            <div class="lesson-text">
+                <strong>Tipos de hooks que funcionan:</strong><br><br>
+                <strong>1. La pregunta intrigante:</strong> "Sabías que...?" o "¿Por qué todos hacen esto mal?" Captura curiosidad.<br><br>
+                <strong>2. La declaración controversial:</strong> "El café de mañana está completamente equivocado" - la gente quiere saber por qué.<br><br>
+                <strong>3. El dato sorprendente:</strong> "El 90% de las personas no saben esto" - la exclusión motiva a ver por qué están en el 10%.<br><br>
+                <strong>4. La sorpresa visual:</strong> Un cambio brusco, algo inesperado, un before/after dramático.<br><br>
+                <strong>5. La conexión personal:</strong> "Lo que me pasó en mi primer día como CM..." - todos quieren saber qué pasó.
+            </div>
+            <div class="lesson-text">
+                <strong>La estructura probada:</strong> Los mejores hooks siguen un patrón: Problema → Intriga → Solución prometida. Empiezas con algo que conecta (problema común), generas curiosidad (intrigado?), y prometes que la respuesta o solución viene después (quiero ver más).
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p><strong>❌ Hook débil:</strong> "Hola, hoy voy a enseñarles cómo hacer un caption perfecto..." (demasiado tiempo para llegar al punto)<br><br>
+                <strong>✅ Hook fuerte:</strong> "El caption que acabo de escribir generó $10,000 en ventas. Te voy a mostrar exactamente cómo lo hice" (número específico + promesa + urgencia)</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Empezar con "¡Holaaaa!" o "Bienvenidos a mi canal". Esto es lo mismo que hacen miles de creadores y no parar el scroll. Tu primer frame (y primeros sonidos) deben ser impactantes desde el segundo cero.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson3">
+            <div class="lesson-title">Errores comunes de principiantes en TikTok</div>
+            <div class="lesson-text">
+                TikTok tiene su propia curva de aprendizaje, y muchos Community Managers cometen errores que limitan su alcance significativamente. Conocer estos errores te permitirá evitarlos desde el principio y acelerar tu crecimiento.
+            </div>
+            <div class="lesson-text">
+                <strong>Error #1: No usar trending sounds:</strong> Los trending sounds (audios populares) son el combustible de TikTok. Cuando usas un sonido que está en tendencia, le dices al algoritmo: "Este contenido es relevante ahora mismo". Los videos con trending sounds tienen significativamente más probabilidad de ser mostrados a nuevas audiencias. Cómo encontrar sounds trending: toca el símbolo "+" cuando estás creando un video y explora los sonidos marcados como " trending".<br><br>
+                <strong>Error #2: No poner subtítulos:</strong> El 80% de las personas ven TikTok sin sonido. Si tu video necesita audio para ser entendido, estás perdiendo al 80% de potenciales viewers. Los subtítulos no son opcionales; son obligatorios. Afortunadamente, TikTok tiene función de subtítulos automáticos que puedes activar.<br><br>
+                <strong>Error #3: Videos demasiado largos:</strong> Aunque TikTok permite hasta 10 minutos, los videos de 15-60 segundos tienen tasas de completado MUCHISIMO más altas. El algoritmo premia el completado de video. Un video de 60 segundos completado tiene más valor que uno de 3 minutos con 30% de retención.<br><br>
+                <strong>Error #4: No publicar suficiente:</strong> A diferencia de Instagram donde publicar mucho puede ser contraproducente, en TikTok la consistencia y frecuencia son clave. La recomendación es mínimo 3-5 videos diarios para encontrar qué formatos funcionan. No tienes que mantener ese ritmo para siempre, pero al principio necesitas testar mucho.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p>Un CM nuevo publica un Reel al día y se pregunta por qué no crece después de un mes. Mientras tanto, otro CM publica 4 videos diarios de diferentes formatos (tutorial, POV, trend + twist, behind-the-scenes). Después de un mes, el segundo CM ha identificado qué formatos resuenan con su audiencia y ha tenido 10x más oportunidades de que un video "pegue". En TikTok, cantidad + testing = crecimiento.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Obsesionarse con la calidad de producción. No necesitas cámara profesional ni edición de Hollywood. Los videos más virales de TikTok a menudo son los más "crudos" y auténticos. Un video grabdo con celular, buena luz natural, y contenido genuino > video perfectamente editado sin alma.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson4">
+            <div class="lesson-title">El secreto del engagement: Interactúa para crecer</div>
+            <div class="lesson-text">
+                El engagement en TikTok no es pasivo como en otras plataformas. Los usuarios esperan interacción, y el algoritmo premia a creadores que generan conversaciones. Aquí está cómo convertir viewers en comunidad activa.
+            </div>
+            <div class="lesson-text">
+                <strong>responder comentarios con videos:</strong> Cuando alguien comenta, RESPONDE con un VIDEO. Esta función (Response Videos) genera contenido adicional Y aumenta el engagement. El video de respuesta aparece enlazado al original, y ambos se benefician del boost de visibilidad.<br><br>
+                <strong>Duets y Stitches:</strong> Colaborar con otros creadores a través de Duets (video lado a lado) y Stitches (usar clips de otros videos) es una forma poderosa de llegar a nuevas audiencias. Cuando haces Duet de un creator popular, su audiencia te descubre.<br><br>
+                <strong>CTAs claros en cada video:</strong> Termina cada video pidiendo acción específica: "Comenta X", "Sígueme para más tips", "Comparte con alguien que necesita esto". TikTok premia videos que generan comentarios y shares.<br><br>
+                <strong>Usa polls y preguntas en comentarios:</strong> Antes de publicar, puedes agregar stickers interactivos (polls, preguntas, quizzes) que aumentan engagement sin depender de comentarios espontáneos.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">💡 Ejemplo práctico</div>
+                <p>Publicas un tip de marketing. Al día siguiente, respondes a los 10 mejores comentarios con videos de seguimiento. Esos 10 videos de respuesta generan más engagement, atraen más comentarios, y el ciclo continúa. Creadores que hacen esto consistentemente build una comunidad leal que espera cada respuesta.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">⚠️ Error común</div>
+                <p>Ignorar los comentarios. Cada comentario es una oportunidad de generar conexión Y señal de engagement para el algoritmo. Responde a todos en las primeras horas, especialmente a los negativos (con calma y profesionalismo). Un Community Manager que ignora su comunidad no está haciendo su trabajo.</p>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <button class="nav-btn" onclick="prevLesson()">← Anterior</button>
+            <button class="nav-btn next" onclick="nextLesson()">Siguiente →</button>
+        </div>
+    </div>
+
+    <footer class="footer"><p>&copy; 2026 Seven App</p></footer>
+
+    <div id="paywallOverlay" class="paywall-overlay" style="display:none;">
+        <div class="paywall-box">
+            <div class="icon">🔒</div>
+            <h2>Contenido Bloqueado</h2>
+            <p>Este contenido requiere el curso completo. Desbloquea para acceder a todas las lecciones.</p>
+            <a href="pago.html?course=community-manager" class="btn-unlock">💳 Desbloquear por $7 USD</a>
+            <a href="community-manager.html" class="back-link">← Volver al curso</a>
+        </div>
+    </div>
+
+    <script>
+        const lessons = 4;
+        let currentLesson = 1;
+        const courseId = 'community-manager';
+
+        function updateDisplay() {
+            document.getElementById('count').textContent = currentLesson;
+            document.getElementById('total').textContent = lessons;
+            document.getElementById('progress').style.width = (currentLesson / lessons * 100) + '%';
+            for (let i = 1; i <= lessons; i++) {
+                const card = document.getElementById('lesson' + i);
+                if (card) {
+                    card.style.display = i === currentLesson ? 'block' : 'none';
+                }
+            }
+        }
+
+        function nextLesson() {
+            if (currentLesson < lessons) {
+                currentLesson++;
+                updateDisplay();
+                window.scrollTo({ top:0, behavior: 'smooth' });
+            } else {
+                window.location.href = 'cm-4.html';
+            }
+        }
+
+        function prevLesson() {
+            if (currentLesson > 1) {
+                currentLesson--;
+                updateDisplay();
+                window.scrollTo({ top:0, behavior: 'smooth' });
+            } else {
+                window.location.href = 'cm-2.html';
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            document.querySelector('.theme-toggle').textContent = isLight ? '☀️' : '🌙';
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+
+        async function checkAccess() {
+            const purchased = JSON.parse(localStorage.getItem('sevenPurchased') || '[]');
+            if (!purchased.includes(courseId)) {
+                document.getElementById('paywallOverlay').style.display = 'flex';
+            }
+        }
+        updateDisplay();
+        checkAccess();
+    </script>
+</body>
+</html>

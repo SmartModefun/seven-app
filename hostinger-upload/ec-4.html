@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seven App - EC Día 4: Pagos</title>
+    <link rel="icon" href="assets/favicon.png">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <style>
+        .paywall-overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(10,10,15,0.95); z-index:1000; display:flex; align-items:center; justify-content:center; }
+        .paywall-box { background:var(--bg-secondary); border:1px solid var(--border); border-radius:20px; padding:40px; text-align:center; max-width:400px; margin:20px; }
+        .paywall-box .icon { font-size:64px; margin-bottom:16px; }
+        .paywall-box h2 { color:var(--accent-primary); margin-bottom:12px; }
+        .paywall-box p { color:var(--text-secondary); margin-bottom:24px; }
+        .paywall-box .btn-unlock { display:inline-block; background:linear-gradient(135deg,var(--accent-primary),var(--accent-secondary)); color:white; padding:14px 32px; border-radius:10px; text-decoration:none; font-weight:600; }
+        .paywall-box .back-link { display:block; margin-top:16px; color:var(--text-muted); text-decoration:none; }
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-tertiary: #1a1a25;
+            --accent-primary: #6366f1;
+            --accent-secondary: #818cf8;
+            --accent-cyan: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --text-primary: #ffffff;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            --border: #2a2a3a;
+        }
+
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            padding-top: 80px;
+            line-height: 1.6;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(6, 182, 212, 0.12) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(16, 185, 129, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+        }
+
+        .header-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(18, 18, 26, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            z-index: 100;
+        }
+
+        .header-bar img {
+            height: 35px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .header-bar img:hover {
+            transform: scale(1.1);
+        }
+
+        .theme-toggle, .home-btn {
+            background: var(--bg-tertiary);
+            color: white;
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover, .home-btn:hover {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .day-title {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 20px;
+            background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, transparent 100%);
+            border-radius: 20px;
+            margin-top: 20px;
+        }
+
+        .day-title h1 {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0 0 12px 0;
+            font-size: 32px;
+        }
+
+        .day-title p {
+            color: var(--text-secondary);
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .progress-bar {
+            background: var(--bg-tertiary);
+            height: 8px;
+            border-radius: 4px;
+            margin: 25px 0;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-cyan));
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s ease;
+            border-radius: 4px;
+        }
+
+        .lesson-count {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 14px;
+            margin: 15px 0;
+        }
+
+        .lesson-count span {
+            color: var(--accent-primary);
+            font-weight: 600;
+        }
+
+        .lesson-card {
+            background: var(--bg-secondary);
+            border-radius: 20px;
+            padding: 35px;
+            margin: 25px 0;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .lesson-card:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15);
+        }
+
+        .lesson-title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--accent-cyan);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .lesson-title::before {
+            content: '';
+            width: 4px;
+            height: 28px;
+            background: linear-gradient(180deg, var(--accent-primary), var(--accent-cyan));
+            border-radius: 2px;
+        }
+
+        .lesson-text {
+            font-size: 16px;
+            line-height: 1.85;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .lesson-text strong {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        .lesson-example {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(6, 182, 212, 0.05));
+            border-left: 4px solid var(--accent-primary);
+            padding: 24px;
+            margin: 25px 0;
+            border-radius: 0 16px 16px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lesson-example::before {
+            content: '💡';
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 24px;
+            opacity: 0.3;
+        }
+
+        .lesson-example-title {
+            color: var(--accent-primary);
+            font-weight: 700;
+            margin-bottom: 12px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .lesson-example p {
+            margin: 0;
+            color: var(--text-primary);
+            font-size: 15px;
+            line-height: 1.75;
+        }
+
+        .lesson-warning {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.05));
+            border-left: 4px solid var(--warning);
+            padding: 24px;
+            margin: 25px 0;
+            border-radius: 0 16px 16px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .lesson-warning::before {
+            content: '⚠️';
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            font-size: 24px;
+            opacity: 0.3;
+        }
+
+        .lesson-warning-title {
+            color: var(--warning);
+            font-weight: 700;
+            margin-bottom: 12px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .lesson-warning p {
+            margin: 0;
+            color: #fcd34d;
+            font-size: 15px;
+            line-height: 1.75;
+        }
+
+        .lesson-step {
+            display: flex;
+            gap: 16px;
+            margin: 25px 0;
+            padding: 20px;
+            background: var(--bg-tertiary);
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .lesson-step:hover {
+            border-color: var(--accent-primary);
+            transform: translateX(5px);
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+            font-size: 16px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-content h4 {
+            margin: 0 0 8px 0;
+            color: var(--text-primary);
+            font-size: 17px;
+        }
+
+        .step-content p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.65;
+        }
+
+        .vocab-box {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.03));
+            border-radius: 16px;
+            padding: 24px;
+            margin: 25px 0;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .vocab-title {
+            color: var(--success);
+            font-weight: 700;
+            margin-bottom: 16px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .vocab-item {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 12px;
+            font-size: 15px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .vocab-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .vocab-term {
+            color: var(--accent-cyan);
+            font-weight: 600;
+            min-width: 140px;
+            flex-shrink: 0;
+        }
+
+        .vocab-def {
+            color: var(--text-secondary);
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            gap: 15px;
+        }
+
+        .nav-btn {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+            padding: 14px 28px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            flex: 1;
+            text-align: center;
+        }
+
+        .nav-btn:hover {
+            background: var(--bg-secondary);
+            border-color: var(--accent-primary);
+        }
+
+        .nav-btn.next {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border: none;
+            color: white;
+        }
+
+        .nav-btn.next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-muted);
+            font-size: 14px;
+            border-top: 1px solid var(--border);
+            margin-top: 60px;
+        }
+
+        body.light-mode {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+        }
+
+        body.light-mode .lesson-card {
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .lesson-card {
+                padding: 25px 20px;
+                border-radius: 16px;
+            }
+            
+            .day-title h1 {
+                font-size: 26px;
+            }
+            
+            .nav-buttons {
+                flex-direction: column;
+            }
+            
+            .nav-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header-bar">
+        <img src="assets/logo.png" onclick="window.location.href='index.html'" alt="Seven App">
+        <div style="display: flex; gap: 10px;">
+            <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+            <a href="ecommerce.html" class="home-btn">← Volver</a>
+            <a href="index.html" class="home-btn">🏠 Inicio</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="day-title">
+            <h1>Día 4: Pagos</h1>
+            <p>Pasarelas de pago en Latinoamérica</p>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+        <div class="lesson-count">Lección <span id="count">1</span> de <span id="total">4</span></div>
+
+        <div class="lesson-card" id="lesson1">
+            <div class="lesson-title">Por qué el pago es crítico para tu e-commerce</div>
+            <div class="lesson-text">
+                Imagina esto: un cliente llega a tu tienda, elige productos, llena su carrito, y llega al checkout. Pero ahí ve que <strong>no hay forma de pagar que le funcione</strong>. Abandona. Acabas de perder una venta por la que probablemente invertiste $5-20 en publicidad. La pasarela de pago no es un detalle técnico; es tu punto de conversión final.
+            </div>
+            <div class="lesson-text">
+                En Latinoamérica, los métodos de pago varían enormemente por país. En Brasil, <strong>Boleto Bancário y PIX</strong> dominan. En México, <strong>OXXO y SPEI</strong> son esenciales. En Colombia, <strong>PSE</strong> es obligatorio. En Argentina, <strong>Mercado Pago</strong> es rey. Ignorar estas preferencias locales es perder ventas.
+            </div>
+            <div class="lesson-text">
+                El checkout debe ser simple. Cada paso adicional, cada campo obligatorio, cada decisión que el cliente tiene que tomar, <strong>reduce tu tasa de conversión</strong>. El checkout ideal es de una sola página con el mínimo de campos: email, dirección de envío, y método de pago.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">Ejemplo práctico</div>
+                <p>Una tienda de moda mexicana vendía solo con tarjeta de crédito/débito. Su tasa de conversión en checkout era 45%. Al agregar OXXO (pago en efectivo en tiendas OXXO), subió a 72%. Muchos clientes en México no tienen tarjeta o prefieren no usarla online.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">Error común</div>
+                <p>Ofrecer solo PayPal o solo tarjeta pensando que "es suficiente". En mercados latinoamericanos, muchos consumidores no tienen PayPal o lo consideran inseguro para montos altos. Siempre investiga qué métodos son populares en tu mercado.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson2">
+            <div class="lesson-title">Pasarelas de pago en Latinoamérica</div>
+            <div class="lesson-text">
+                <strong>MercadoPago</strong> es la pasarela de pago más importante de Latinoamérica. Opera en México, Brasil, Argentina, Colombia, Chile, Perú, y Uruguay. Si vendes en cualquier país de esta región, necesitas MercadoPago. Es simple de integrar y ofrece múltiples métodos de pago locales.
+            </div>
+            <div class="lesson-text">
+                Las comisiones varían por país y método de pago, pero generalmente están entre <strong>3-6% por transacción</strong>. Para tarjetas de crédito, suele ser más alto (5-6%) mientras que pagos en efectivo o transferencia pueden ser menores. Estos costos deben estar en tu cálculo de márgenes.
+            </div>
+            <div class="lesson-text">
+                MercadoPago ofrece funcionalidades adicionales valiosas: <strong>splits de pago</strong> (si usas vendors o marketplace), Mercado Crédito para compras a meses sin intereses, y <strong>protección para compradores</strong> que reduce disputas. La protección de comprador es especialmente importante porque reduce chargebacks.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">Ejemplo práctico</div>
+                <p>Una tienda de suplementos alimenticios en México recibía pagos solo por transferencia bancaria. Al agregar MercadoPago con pagos en OXXO y tarjeta, las ventas aumentaron 40% en el primer mes. El costo de la comisión valió la pena.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">Error común</div>
+                <p>Aceptar pagos por transferencia sin verificación. En México, alguien puede hacer una transferencia y fingir que sí pagó. Con MercadoPago, la transacción se verifica automáticamente.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson3">
+            <div class="lesson-title">PayPal y Stripe - Configuración</div>
+            <div class="lesson-text">
+                <strong>Stripe</strong> es la pasarela preferida de startups tecnológicas y negocios que venden internacionalmente. Su API es excepcionalmente developer-friendly, permitiendo integraciones customizadas. Stripe soporta más de <strong>135 monedas</strong> y métodos de pago locales.
+            </div>
+            <div class="lesson-text">
+                Las comisiones de Stripe son simples: <strong>2.9% + $0.30 por transacción exitosa</strong> para tarjetas. No hay costos fijos mensuales ni cargos ocultos. Esta simplicidad facilita proyectar costos y márgenes.
+            </div>
+            <div class="lesson-text">
+                <strong>PayPal</strong> sigue siendo relevante, especialmente para compradores que ya confían en la marca. Ofrece protección al comprador que da seguridad a quienes no conocen tu tienda. Pero sus comisiones y la conversión de moneda desfavorable para Latinoamérica lo hacen menos atractivo.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">Ejemplo práctico</div>
+                <p>Una marca de ropa mexicana que empezó en Mercado Libre creó su tienda propia en Shopify. Integraron Stripe para pagos internacionales y MercadoPago para el mercado local. El 30% de sus ventas vinieron de USA y Latinoamérica con un ticket promedio 40% mayor.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">Error común</div>
+                <p>No considerar los chargebacks (reversiones de cargo). Cuando un cliente disputa un cargo con su banco, pierdes el producto y la venta. Prevención es mejor: envía rápido, comunica bien, y documenta con fotos de envío.</p>
+            </div>
+        </div>
+
+        <div class="lesson-card" id="lesson4">
+            <div class="lesson-title">Métodos alternativos</div>
+            <div class="lesson-text">
+                Las <strong>transferencias bancarias directas</strong> siguen siendo relevantes en muchos mercados. En México, SPEI permite transferencias inmediatas entre bancos. En Colombia, PSE conecta directamente con bancos. Son opciones de bajo costo que muchos clientes prefieren para montos grandes.
+            </div>
+            <div class="lesson-text">
+                <strong>Bizum</strong> es esencial en España, permitiendo pagos instantáneos desde móvil. En mercados donde está disponible, puede aumentar conversiones significativamente entre clientes que no quieren introducir datos bancarios online.
+            </div>
+            <div class="lesson-text">
+                Para métodos alternativos como <strong>Bitcoin o Ethereum</strong>, considera solo si tu audiencia objetivo es tech-savvy. La ventaja principal: transacciones irreversibles (no hay chargebacks). La desventaja: volatilidad extrema. Tu producto a $100 puede terminar valiendo $80 o $120.
+            </div>
+            <div class="lesson-example">
+                <div class="lesson-example-title">Ejemplo práctico</div>
+                <p>Eine deutsche Elektronikmarke begann, Bitcoin als Zahlungsmethode anzubieten. Nach 6 Monaten machten BTC-Zahlungen 3% der Transaktionen aus, aber die Kunden hatten einen 20% höheren Warenkorb. Für Nischenprodukte kann Krypto sinnvoll sein.</p>
+            </div>
+            <div class="lesson-warning">
+                <div class="lesson-warning-title">Error común</div>
+                <p>Überangebot an Zahlungsmethoden. Wenn Sie 10 verschiedene Optionen anbieten, wird die Checkout-Seite überladen. Bieten Sie zunächst die 3-4 wichtigsten Methoden für Ihren Markt.</p>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="ec-3.html" class="nav-btn">← Anterior</a>
+            <a href="ec-5.html" class="nav-btn next">Siguiente →</a>
+        </div>
+    </div>
+
+    <footer class="footer"><p>© 2026 Seven App</p></footer>
+
+    <div id="paywallOverlay" class="paywall-overlay" style="display:none;">
+        <div class="paywall-box">
+            <div class="icon">🔒</div>
+            <h2>Contenido Bloqueado</h2>
+            <p>Este contenido requiere el curso completo. Desbloquea para acceder a todas las lecciones.</p>
+            <a onclick="goToNext()" class="btn-unlock">💳 Desbloquear por $7 USD</a>
+            <a href="ecommerce.html" class="back-link">← Volver al curso</a>
+        </div>
+    </div>
+
+    <script>
+        const lessons = 4;
+        let currentLesson = 1;
+        const courseId = 'ecommerce';
+
+        async function checkAccess() {
+            const purchased = JSON.parse(localStorage.getItem('sevenPurchased') || '[]');
+            if (!purchased.includes(courseId)) {
+                document.getElementById('paywallOverlay').style.display = 'flex';
+            }
+        }
+        checkAccess();
+    </script>
+</body>
+</html>
