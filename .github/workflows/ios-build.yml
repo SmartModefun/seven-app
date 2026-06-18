@@ -181,8 +181,13 @@ jobs:
             -f "$IPA" \
             --apiKey "$API_KEY_ID" \
             --apiIssuer "$API_ISSUER_ID" \
-            --type ios \
-            --output-format json --verbose 2>&1 | tee -a /tmp/upload.log
+            --apple-id "oscarquiroga@smartmode.fun" \
+            --bundle-id "com.sevenapp.app" \
+            --bundle-version "1" \
+            --bundle-short-version-string "1.0" \
+            -t ios \
+            --wait \
+            --verbose 2>&1 | tee -a /tmp/upload.log
           ALTOOL_EXIT=${PIPESTATUS[0]}
           echo "altool exit code: $ALTOOL_EXIT" | tee -a /tmp/upload.log
           test $ALTOOL_EXIT -eq 0 || exit $ALTOOL_EXIT
