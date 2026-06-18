@@ -171,60 +171,26 @@ jobs:
           API_KEY_B64: ${{ secrets.APP_STORE_CONNECT_API_KEY_B64 }}
           ASC_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
         run: |
+          set -e
           mkdir -p ~/.appstoreconnect/private_keys
           echo "$API_KEY_B64" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8
+          chmod 600 ~/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8
           IPA=$(ls build/*.ipa 2>/dev/null | head -1)
           if [ -z "$IPA" ]; then echo "No IPA found"; exit 1; fi
           echo "Uploading: $IPA ($(stat -f%z "$IPA") bytes)"
-          echo "Upload log:" > /tmp/upload.log
 
-          # Validate first
-          echo "=== VALIDATE ===" | tee -a /tmp/upload.log
-          xcrun altool --validate-app -f "$IPA" \
-            --apiKey "$API_KEY_ID" \
-            --apiIssuer "$API_ISSUER_ID" \
-            -t ios --verbose 2>&1 | tee -a /tmp/upload.log
-          VALIDATE_EXIT=${PIPESTATUS[0]}
+          # Install fastlane with sudo
+          sudo gem install fastlane -n /usr/local/bin --no-document
 
-          if [ $VALIDATE_EXIT -ne 0 ]; then
-            echo "VALIDATION FAILED - IPA is invalid" | tee -a /tmp/upload.log
-            exit $VALIDATE_EXIT
-          fi
-
-          echo "Uploading: $IPA ($(stat -f%z "$IPA") bytes)"
-          echo "Upload log:" > /tmp/upload.log
-
-          # Validate IPA first
-          echo "=== VALIDATE ===" | tee -a /tmp/upload.log
-          xcrun altool --validate-app -f "$IPA" \
-            --apiKey "$API_KEY_ID" \
-            --apiIssuer "$API_ISSUER_ID" \
-            -t ios --verbose 2>&1 | tee -a /tmp/upload.log
-
-          # Upload with fastlane pilot (most reliable)
-          echo "=== PILOT UPLOAD ===" | tee -a /tmp/upload.log
+          # Create JSON API key file for fastlane
           mkdir -p fastlane
           echo "app_identifier 'com.sevenapp.app'" > fastlane/Appfile
-          echo "apple_id 'oscarquiroga@smartmode.fun'" >> fastlane/Appfile
           echo "team_id '4J94Y6J3DD'" >> fastlane/Appfile
-          # Create JSON API key file for fastlane
-          jq -n --arg kid "$API_KEY_ID" --arg iid "$API_ISSUER_ID" --arg key "$(cat $HOME/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8)" '{"key_id":$kid,"issuer_id":$iid,"key":$key,"is_key_content":true,"in_house":false}' > fastlane/api_key.json
-          gem install fastlane -n /usr/local/bin --no-document 2>&1 | tee -a /tmp/upload.log
-          fastlane pilot upload "$IPA" \
-            --api_key_path fastlane/api_key.json \
-            --skip_waiting_for_build_processing true 2>&1 | tee -a /tmp/upload.log
-          PILOT_EXIT=${PIPESTATUS[0]}
-          echo "pilot exit code: $PILOT_EXIT" | tee -a /tmp/upload.log
+          jq -n --arg kid "$API_KEY_ID" --arg iid "$API_ISSUER_ID" --arg key "$(cat ~/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8)" '{"key_id":$kid,"issuer_id":$iid,"key":$key,"is_key_content":true,"in_house":false}' > fastlane/api_key.json
 
-          if [ $PILOT_EXIT -ne 0 ]; then
-            echo "fastlane pilot failed too, trying altool as last resort..." | tee -a /tmp/upload.log
-            xcrun altool --upload-package "$IPA" \
-              --apiKey "$API_KEY_ID" \
-              --apiIssuer "$API_ISSUER_ID" \
-              -t ios \
-              --verbose 2>&1 | tee -a /tmp/upload.log
-            exit ${PIPESTATUS[0]}
-          fi
+          # Upload via fastlane pilot
+          fastlane pilot upload "$IPA" \
+            --api_key_path fastlane/api_key.json
 
       - name: Upload IPA as artifact
         if: always()
@@ -234,10 +200,10 @@ jobs:
           path: build/App.ipa
           if-no-files-found: warn
 
-      - name: Upload altool log
+      - name: Upload fastlane log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: altool-upload.log
-          path: /tmp/upload.log
+          name: fastlane-upload.log
+          path: ~/.fastlane/fastlane.log
           if-no-files-found: warn
