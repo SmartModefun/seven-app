@@ -171,7 +171,10 @@ jobs:
           API_KEY_B64: ${{ secrets.APP_STORE_CONNECT_API_KEY_B64 }}
           ASC_TEAM_ID: ${{ secrets.IOS_TEAM_ID }}
         run: |
+          LOG=/tmp/upload.log
+          exec 2>>"$LOG"
           set -e
+          set -x
           mkdir -p ~/.appstoreconnect/private_keys
           echo "$API_KEY_B64" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8
           chmod 600 ~/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8
@@ -179,14 +182,15 @@ jobs:
           if [ -z "$IPA" ]; then echo "No IPA found"; exit 1; fi
           echo "Uploading: $IPA ($(stat -f%z "$IPA") bytes)"
 
-          # Install fastlane with sudo
-          sudo gem install fastlane -n /usr/local/bin --no-document
+          # Install fastlane with brew (faster on macOS runners)
+          brew install fastlane
 
           # Create JSON API key file for fastlane
           mkdir -p fastlane
           echo "app_identifier 'com.sevenapp.app'" > fastlane/Appfile
           echo "team_id '4J94Y6J3DD'" >> fastlane/Appfile
-          jq -n --arg kid "$API_KEY_ID" --arg iid "$API_ISSUER_ID" --arg key "$(cat ~/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8)" '{"key_id":$kid,"issuer_id":$iid,"key":$key,"is_key_content":true,"in_house":false}' > fastlane/api_key.json
+          echo "$(cat ~/.appstoreconnect/private_keys/AuthKey_$API_KEY_ID.p8)" > /tmp/p8_content.txt
+          jq -n --arg kid "$API_KEY_ID" --arg iid "$API_ISSUER_ID" --arg key "$(cat /tmp/p8_content.txt)" '{"key_id":$kid,"issuer_id":$iid,"key":$key,"is_key_content":true,"in_house":false}' > fastlane/api_key.json
 
           # Upload via fastlane pilot
           fastlane pilot upload "$IPA" \
