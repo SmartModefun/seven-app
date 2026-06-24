@@ -1,4 +1,4 @@
-package com.sevenapp.app;
+package com.smartmode.sevenapp;
 
 import com.getcapacitor.BridgeActivity;
 

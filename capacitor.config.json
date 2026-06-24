@@ -1,5 +1,5 @@
 {
-  "appId": "com.sevenapp.app",
+  "appId": "com.smartmode.sevenapp",
   "appName": "Seven App",
   "webDir": "www",
   "bundledWebRuntime": false,
@@ -29,12 +29,6 @@
     "StatusBar": {
       "style": "DARK",
       "backgroundColor": "#0a0a0f"
-    },
-    "Purchases": {
-      "apiKey": "appl_YOUR_REVENUECAT_API_KEY"
-    },
-    "AdMob": {
-      "appId": "ca-app-pub-1641234521055178~YOUR_IOS_APP_ID"
     }
   },
   "ios": {
