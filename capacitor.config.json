@@ -1,5 +1,5 @@
 {
-  "appId": "com.smartmode.sevenapp",
+  "appId": "com.sevenapp.app",
   "appName": "Seven App",
   "webDir": "www",
   "bundledWebRuntime": false,
