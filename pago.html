@@ -63,9 +63,9 @@
     </header>
 
     <div class="payment-container">
-        <div class="payment-tabs">
-            <button class="payment-tab active" onclick="showSection('paypal')">💳 PayPal</button>
-            <button class="payment-tab" onclick="showSection('bank')">🏦 Transferencia</button>
+        <div class="payment-tabs" id="paymentTabs">
+            <button class="payment-tab active" id="paypalTab" onclick="showSection('paypal')">💳 PayPal</button>
+            <button class="payment-tab" id="bankTab" onclick="showSection('bank')">🏦 Transferencia</button>
             <button class="payment-tab" onclick="showSection('code')">🎫 Código</button>
             <button class="payment-tab" id="appStoreTab" onclick="showSection('appstore')" style="display:none;">🍎 App Store</button>
         </div>
@@ -186,7 +186,8 @@
             document.querySelectorAll('.payment-section').forEach(s => s.classList.remove('active'));
             if (section === 'paypal') { document.querySelectorAll('.payment-tab')[0].classList.add('active'); document.getElementById('paypalSection').classList.add('active'); }
             else if (section === 'bank') { document.querySelectorAll('.payment-tab')[1].classList.add('active'); document.getElementById('bankSection').classList.add('active'); }
-            else { document.querySelectorAll('.payment-tab')[2].classList.add('active'); document.getElementById('codeSection').classList.add('active'); }
+            else if (section === 'code') { document.querySelectorAll('.payment-tab')[2].classList.add('active'); document.getElementById('codeSection').classList.add('active'); }
+            else if (section === 'appstore') { document.getElementById('appStoreTab').classList.add('active'); document.getElementById('appStoreSection').classList.add('active'); }
         }
 
         function updateCalculator() {
@@ -233,6 +234,9 @@
             updateCalculator();
             if (window.CapacitorBridge && window.CapacitorBridge.isCapacitor) {
                 document.getElementById('appStoreTab').style.display = 'inline-block';
+                document.getElementById('paypalTab').style.display = 'none';
+                document.getElementById('bankTab').style.display = 'none';
+                showSection('appstore');
             }
             if (params.get('verified') === 'true') { processPaypalVerification(); }
         }

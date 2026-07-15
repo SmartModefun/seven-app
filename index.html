@@ -806,6 +806,10 @@
             }
         }
 
+        if (window.location.search.includes('deleted=true')) {
+            alert('Tu cuenta ha sido eliminada exitosamente. Lamentamos verte ir.');
+        }
+
         renderCourses();
         loadTheme();
         checkAuthState();
