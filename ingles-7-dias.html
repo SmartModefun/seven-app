@@ -12,7 +12,12 @@
     <script>
         var _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
         var _isNative = (typeof window.CapacitorBridge !== 'undefined' && window.CapacitorBridge.isCapacitor) || _isIOS;
-        if (_isNative) { var el = document.querySelector('.paypal-box'); if (el) el.style.display = 'none'; }
+        if (_isNative) {
+            document.addEventListener('DOMContentLoaded', function () {
+                var el = document.querySelector('.paypal-box');
+                if (el) el.style.display = 'none';
+            });
+        }
     </script>
 <body>
     <header class="header">
@@ -136,7 +141,6 @@
 
     <footer class="footer">
         <p>&copy; 2026 Seven App</p>
-        <p style="margin-top: 8px;">📧 <a href="mailto:info@seven-app.com" style="color: #6366f1; text-decoration: none;">info@seven-app.com</a></p>
     </footer>
 
     <script>
