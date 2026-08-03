@@ -232,7 +232,9 @@
             const cancelUrl = encodeURIComponent(window.location.href);
             document.getElementById('paypalLink').href = `https://www.paypal.com/ncp/payment/${currentCourse.paypalId}?return_url=${returnUrl}&cancel_url=${cancelUrl}`;
             updateCalculator();
-            if (window.CapacitorBridge && window.CapacitorBridge.isCapacitor) {
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            const isNativeApp = (window.CapacitorBridge && window.CapacitorBridge.isCapacitor) || isIOS;
+            if (isNativeApp) {
                 document.getElementById('appStoreTab').style.display = 'inline-block';
                 document.getElementById('paypalTab').style.display = 'none';
                 document.getElementById('bankTab').style.display = 'none';

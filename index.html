@@ -808,6 +808,9 @@
 
         if (window.location.search.includes('deleted=true')) {
             alert('Tu cuenta ha sido eliminada exitosamente. Lamentamos verte ir.');
+        } else if (sessionStorage.getItem('deleted') === 'true') {
+            sessionStorage.removeItem('deleted');
+            alert('Tu cuenta ha sido eliminada exitosamente. Lamentamos verte ir.');
         }
 
         renderCourses();

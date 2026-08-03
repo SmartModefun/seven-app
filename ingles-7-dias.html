@@ -9,6 +9,11 @@
     <link rel="icon" href="assets/favicon.png">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
     <script src="capacitor-bridge.js"></script>
+    <script>
+        var _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        var _isNative = (typeof window.CapacitorBridge !== 'undefined' && window.CapacitorBridge.isCapacitor) || _isIOS;
+        if (_isNative) { var el = document.querySelector('.paypal-box'); if (el) el.style.display = 'none'; }
+    </script>
 <body>
     <header class="header">
         <div class="header-content">

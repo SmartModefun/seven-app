@@ -282,20 +282,33 @@
 
     <div id="deleteModal" class="delete-modal">
         <div class="modal-box">
-            <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
-            <h2>¿Eliminar tu cuenta?</h2>
-            <p>Esta acción es <strong>irreversible</strong>. Se eliminarán permanentemente:</p>
-            <p style="text-align: left; margin-bottom: 16px;">
-                • Tu cuenta y datos personales<br>
-                • Tu progreso en todos los cursos<br>
-                • Tu historial de compras
-            </p>
-            <p style="font-size: 13px; color: #ef4444; margin-bottom: 24px;">Para confirmar, escribí <strong>ELIMINAR</strong> abajo.</p>
-            <input type="text" id="confirmDeleteInput" placeholder="Escribí ELIMINAR" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--bg-tertiary);color:var(--text-primary);font-size:16px;text-align:center;margin-bottom:20px;box-sizing:border-box;">
-            <div id="deleteError" style="color:#ef4444;font-size:13px;margin-bottom:16px;display:none;"></div>
-            <div class="modal-actions">
-                <button class="btn-secondary" onclick="closeDeleteModal()" style="padding:12px 24px;">Cancelar</button>
-                <button class="btn-danger" id="confirmDeleteBtn" onclick="deleteAccount()" disabled style="opacity:0.5;">Eliminar</button>
+            <div id="deleteModalContent">
+                <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+                <h2>¿Eliminar tu cuenta?</h2>
+                <p>Esta acción es <strong>irreversible</strong>. Se eliminarán permanentemente:</p>
+                <p style="text-align: left; margin-bottom: 16px;">
+                    • Tu cuenta y datos personales<br>
+                    • Tu progreso en todos los cursos<br>
+                    • Tu historial de compras
+                </p>
+                <p style="font-size: 13px; color: #ef4444; margin-bottom: 24px;">Para confirmar, escribí <strong>ELIMINAR</strong> abajo.</p>
+                <input type="text" id="confirmDeleteInput" placeholder="Escribí ELIMINAR" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--bg-tertiary);color:var(--text-primary);font-size:16px;text-align:center;margin-bottom:20px;box-sizing:border-box;">
+                <div id="deleteError" style="color:#ef4444;font-size:13px;margin-bottom:16px;display:none;"></div>
+                <div class="modal-actions">
+                    <button class="btn-secondary" onclick="closeDeleteModal()" style="padding:12px 24px;">Cancelar</button>
+                    <button class="btn-danger" id="confirmDeleteBtn" onclick="deleteAccount()" disabled style="opacity:0.5;">Eliminar</button>
+                </div>
+            </div>
+            <div id="reauthContent" style="display:none;">
+                <div style="font-size: 48px; margin-bottom: 16px;">🔐</div>
+                <h2>Re-autenticación</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 24px;">Por seguridad, ingresá tu contraseña para continuar.</p>
+                <input type="password" id="reauthPassword" placeholder="Contraseña" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--bg-tertiary);color:var(--text-primary);font-size:16px;margin-bottom:12px;box-sizing:border-box;">
+                <div id="reauthError" style="color:#ef4444;font-size:13px;margin-bottom:16px;display:none;"></div>
+                <div class="modal-actions">
+                    <button class="btn-secondary" onclick="closeDeleteModal()" style="padding:12px 24px;">Cancelar</button>
+                    <button class="btn-danger" onclick="reauthenticateAndDelete()" style="padding:12px 24px;">Confirmar y Eliminar</button>
+                </div>
             </div>
         </div>
     </div>
@@ -430,6 +443,10 @@
             document.getElementById('confirmDeleteBtn').disabled = true;
             document.getElementById('confirmDeleteBtn').style.opacity = '0.5';
             document.getElementById('deleteError').style.display = 'none';
+            document.getElementById('reauthError').style.display = 'none';
+            document.getElementById('deleteModalContent').style.display = 'block';
+            document.getElementById('reauthContent').style.display = 'none';
+            document.getElementById('reauthPassword').value = '';
         }
 
         function closeDeleteModal() {
@@ -461,21 +478,51 @@
                 if (!user) { window.location.href = 'index.html'; return; }
 
                 await db.collection('users').doc(user.uid).delete();
+                sessionStorage.setItem('deleted', 'true');
                 await user.delete();
 
                 window.location.href = 'index.html?deleted=true';
             } catch (err) {
                 if (err.code === 'auth/requires-recent-login') {
-                    error.textContent = 'Por seguridad, debes cerrar sesión y volver a iniciarla antes de eliminar tu cuenta.';
-                    error.style.display = 'block';
-                    btn.disabled = false;
-                    btn.textContent = '🗑️ Eliminar mi cuenta';
+                    document.getElementById('deleteModalContent').style.display = 'none';
+                    document.getElementById('reauthContent').style.display = 'block';
                 } else {
                     error.textContent = 'Error al eliminar la cuenta: ' + (err.message || 'desconocido');
                     error.style.display = 'block';
                     btn.disabled = false;
-                    btn.textContent = '🗑️ Eliminar mi cuenta';
+                    btn.textContent = 'Eliminar mi cuenta';
                 }
+            }
+        }
+
+        async function reauthenticateAndDelete() {
+            const password = document.getElementById('reauthPassword').value;
+            const error = document.getElementById('reauthError');
+            error.style.display = 'none';
+
+            if (!password) {
+                error.textContent = 'Ingresá tu contraseña.';
+                error.style.display = 'block';
+                return;
+            }
+
+            try {
+                const user = firebase.auth().currentUser;
+                const credential = firebase.auth.EmailAuthProvider.credential(user.email, password);
+                await user.reauthenticateWithCredential(credential);
+
+                await db.collection('users').doc(user.uid).delete();
+                sessionStorage.setItem('deleted', 'true');
+                await user.delete();
+
+                window.location.href = 'index.html?deleted=true';
+            } catch (err) {
+                if (err.code === 'auth/wrong-password') {
+                    error.textContent = 'Contraseña incorrecta.';
+                } else {
+                    error.textContent = 'Error: ' + (err.message || 'desconocido');
+                }
+                error.style.display = 'block';
             }
         }
 
@@ -509,6 +556,9 @@
         firebase.auth().onAuthStateChanged((user) => {
             if (user) {
                 loadDashboard();
+            } else if (sessionStorage.getItem('deleted') === 'true') {
+                sessionStorage.removeItem('deleted');
+                window.location.href = 'index.html?deleted=true';
             } else {
                 window.location.href = 'index.html';
             }

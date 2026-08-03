@@ -7,7 +7,7 @@ android {
         applicationId "com.smartmode.sevenapp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        versionCode 7
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
@@ -18,10 +18,10 @@ android {
     }
     signingConfigs {
         release {
-            storeFile file(RELEASE_STORE_FILE)
-            storePassword RELEASE_STORE_PASSWORD
-            keyAlias RELEASE_KEY_ALIAS
-            keyPassword RELEASE_KEY_PASSWORD
+            storeFile file("smart-mode.keystore")
+            storePassword System.getenv("KEYSTORE_PASSWORD") ?: "AQdiseno@2010"
+            keyAlias "smart-mode"
+            keyPassword System.getenv("KEYSTORE_PASSWORD") ?: "AQdiseno@2010"
         }
     }
     buildTypes {
