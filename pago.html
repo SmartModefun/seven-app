@@ -233,9 +233,16 @@
             document.getElementById('paypalLink').href = `https://www.paypal.com/ncp/payment/${currentCourse.paypalId}?return_url=${returnUrl}&cancel_url=${cancelUrl}`;
             updateCalculator();
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-            const isNativeApp = (window.CapacitorBridge && window.CapacitorBridge.isCapacitor) || isIOS;
+            const isAndroid = /android/i.test(navigator.userAgent);
+            const nativePlatform = window.Capacitor && window.Capacitor.getPlatform ? window.Capacitor.getPlatform() : '';
+            const isNativeApp = (window.CapacitorBridge && window.CapacitorBridge.isCapacitor) || isIOS || isAndroid;
             if (isNativeApp) {
+                const isPlay = nativePlatform === 'android' || isAndroid;
                 document.getElementById('appStoreTab').style.display = 'inline-block';
+                document.getElementById('appStoreTab').textContent = isPlay ? '▶️ Google Play' : '🍎 App Store';
+                document.getElementById('courseNameAppStore').textContent = isPlay ? currentCourse.name + ' (Google Play)' : currentCourse.name;
+                document.getElementById('appStoreSection').querySelector('h1').textContent = isPlay ? 'Compra en Google Play' : 'Compra en App Store';
+                document.getElementById('appStoreBuyBtn').textContent = isPlay ? '▶️ Comprar con Google Play' : '🍎 Comprar con App Store';
                 document.getElementById('paypalTab').style.display = 'none';
                 document.getElementById('bankTab').style.display = 'none';
                 showSection('appstore');

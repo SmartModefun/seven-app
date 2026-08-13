@@ -8,7 +8,26 @@ window.CapacitorBridge = (() => {
         'ecommerce': { rcId: 'curso_ecommerce', name: 'E-commerce' }
     };
 
-    const RC_API_KEY = 'appl_YOUR_REVENUECAT_API_KEY';
+    const RC_KEYS = {
+        ios: 'appl_AtQHDxaBNytJQgSiCrRgDHijfPD',
+        android: 'goog_YOUR_REVENUECAT_API_KEY'
+    };
+
+    function getPlatform() {
+        if (window.Capacitor && window.Capacitor.getPlatform) {
+            try { return window.Capacitor.getPlatform(); } catch (e) {}
+        }
+        if (/iPad|iPhone|iPod/.test(navigator.userAgent)) return 'ios';
+        if (/android/i.test(navigator.userAgent)) return 'android';
+        return 'web';
+    }
+
+    function getRevenueCatKey() {
+        const platform = getPlatform();
+        return platform === 'android' ? RC_KEYS.android : RC_KEYS.ios;
+    }
+
+    const RC_API_KEY = getRevenueCatKey();
 
     function ensurePlugin(name) {
         if (!window.Capacitor || !window.Capacitor.registerPlugin) return null;
