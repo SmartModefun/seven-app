@@ -29,19 +29,11 @@
     "StatusBar": {
       "style": "DARK",
       "backgroundColor": "#0a0a0f"
-    },
-    "Purchases": {
-      "apiKey": "appl_AtQHDxaBNytJQgSiCrRgDHijfPD"
     }
   },
   "ios": {
     "contentInset": "always",
-    "preferredContentMode": "mobile",
-    "plugins": {
-      "Purchases": {
-        "apiKey": "appl_AtQHDxaBNytJQgSiCrRgDHijfPD"
-      }
-    }
+    "preferredContentMode": "mobile"
   },
   "android": {
     "buildOptions": {
@@ -50,11 +42,6 @@
       "keystoreAlias": null,
       "keystoreAliasPassword": null,
       "releaseType": null
-    },
-    "plugins": {
-      "Purchases": {
-        "apiKey": "goog_YOUR_REVENUECAT_API_KEY"
-      }
     }
   }
 }

@@ -86,6 +86,22 @@ android/app/build/
 
 # Service account (contains private keys)
 functions/serviceAccountKey.json
+android/play-service-account.json
+
+# Debug/upload scripts (contains credentials)
+upload-aab.js
+check-app-status.js
+check-play-console.js
+check-requirements.js
+commit-edit.js
+fix-production.js
+full-submit.js
+set-production.js
+submit-review.js
+try-submit.js
+update-listing.js
+verify-state.js
+PLAY-CONSOLE-ANSWERS.md
 
 # Icon generators (scripts, not for distribution)
 generate_icon.py
