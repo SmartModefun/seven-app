@@ -20,7 +20,6 @@
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
-    "@capacitor-community/admob": "file:capacitor-community-admob-7.2.0.tgz",
     "@capacitor/android": "^7.0.0",
     "@capacitor/app": "^7.0.0",
     "@capacitor/core": "^7.0.0",
