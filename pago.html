@@ -64,17 +64,38 @@
 
     <div class="payment-container">
         <div class="payment-tabs" id="paymentTabs">
-            <button class="payment-tab active" id="paypalTab" onclick="showSection('paypal')">💳 PayPal</button>
-            <button class="payment-tab" id="bankTab" onclick="showSection('bank')">🏦 Transferencia</button>
-            <button class="payment-tab" onclick="showSection('code')">🎫 Código</button>
-            <button class="payment-tab" id="appStoreTab" onclick="showSection('appstore')" style="display:none;">🍎 App Store</button>
+            <button class="payment-tab active" id="appStoreTab" onclick="showSection('appstore')" style="display:inline-block;">🍎 App Store</button>
+            <button class="payment-tab web-only" id="paypalTab" onclick="showSection('paypal')" style="display:none;">💳 PayPal</button>
+            <button class="payment-tab web-only" id="bankTab" onclick="showSection('bank')" style="display:none;">🏦 Transferencia</button>
+            <button class="payment-tab web-only" id="codeTab" onclick="showSection('code')" style="display:none;">🎫 Código</button>
         </div>
 
         <div class="payment-box">
             <div id="errorMessage" class="error-message"></div>
 
-            <div id="paypalSection" class="payment-section active">
-                <div class="payment-icon" id="courseIcon">🌐</div>
+            <div id="appStoreSection" class="payment-section active">
+                <div class="payment-icon" id="courseIcon">🍎</div>
+                <h1 id="appStoreSectionTitle">Compra en App Store</h1>
+                <p class="course-name" id="courseNameAppStore">Inglés en 7 Días</p>
+                <div class="price-display">$7 USD</div>
+                <div class="price-label">Pago único • Acceso de por vida</div>
+                <ul class="payment-features">
+                    <li>7 días de contenido intensivo</li>
+                    <li>Acceso desde cualquier dispositivo</li>
+                    <li>Audio y ejercicios prácticos</li>
+                    <li>Certificado de finalización</li>
+                </ul>
+                <button class="btn-primary btn-large" id="appStoreBuyBtn" onclick="purchaseWithAppStore()" style="width:100%;padding:16px;font-size:18px;">
+                    🍎 Comprar con App Store
+                </button>
+                <div id="appStoreStatus" style="margin-top:12px;color:var(--text-secondary);font-size:14px;display:none;"></div>
+                <button class="btn-secondary" onclick="restoreAppStorePurchases()" style="margin-top:16px;padding:10px 20px;background:var(--bg-tertiary);color:var(--text-secondary);border:1px solid var(--border);border-radius:8px;cursor:pointer;">
+                    🔄 Restaurar compras
+                </button>
+            </div>
+
+            <div id="paypalSection" class="payment-section web-only" style="display:none;">
+                <div class="payment-icon">🌐</div>
                 <h1>Accede al Curso</h1>
                 <p class="course-name" id="courseName">Inglés en 7 Días</p>
                 <div class="price-display">$7 USD</div>
@@ -89,7 +110,7 @@
                 <p class="secure-note">🔒 Pago 100% seguro a través de PayPal</p>
             </div>
 
-            <div id="bankSection" class="payment-section">
+            <div id="bankSection" class="payment-section web-only" style="display:none;">
                 <div class="payment-icon">🏦</div>
                 <h1>Transferencia Bancaria</h1>
                 <p class="course-name" id="courseNameBank">Inglés en 7 Días</p>
@@ -121,7 +142,7 @@
                 <div class="transfer-note">📧 Una vez realizada la transferencia, envianos el comprobante con tu email de registro. Activaremos tu curso manualmente.</div>
             </div>
 
-            <div id="codeSection" class="payment-section">
+            <div id="codeSection" class="payment-section web-only" style="display:none;">
                 <div class="payment-icon">🎫</div>
                 <h1>¿Tienes un Código?</h1>
                 <p style="color: var(--text-secondary); margin-bottom: 24px;">Ingresá tu código de acceso para desbloquear el curso.</p>
@@ -130,27 +151,6 @@
                     <button type="button" class="btn-primary" onclick="alert('click!'); redeemCode();">Canjear</button>
                 </form>
                 <p id="codeError" class="code-error">Código inválido o expirado</p>
-            </div>
-
-            <div id="appStoreSection" class="payment-section">
-                <div class="payment-icon">🍎</div>
-                <h1>Compra en App Store</h1>
-                <p class="course-name" id="courseNameAppStore">Inglés en 7 Días</p>
-                <div class="price-display">$7 USD</div>
-                <div class="price-label">Pago único • Acceso de por vida</div>
-                <ul class="payment-features">
-                    <li>7 días de contenido intensivo</li>
-                    <li>Acceso desde cualquier dispositivo</li>
-                    <li>Audio y ejercicios prácticos</li>
-                    <li>Certificado de finalización</li>
-                </ul>
-                <button class="btn-primary btn-large" id="appStoreBuyBtn" onclick="purchaseWithAppStore()" style="width:100%;padding:16px;font-size:18px;">
-                    🍎 Comprar con App Store
-                </button>
-                <div id="appStoreStatus" style="margin-top:12px;color:var(--text-secondary);font-size:14px;display:none;"></div>
-                <button class="btn-secondary" onclick="restoreAppStorePurchases()" style="margin-top:16px;padding:10px 20px;background:var(--bg-tertiary);color:var(--text-secondary);border:1px solid var(--border);border-radius:8px;cursor:pointer;">
-                    🔄 Restaurar compras
-                </button>
             </div>
 
             <div id="successBox" class="success-box">
@@ -184,9 +184,9 @@
         function showSection(section) {
             document.querySelectorAll('.payment-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.payment-section').forEach(s => s.classList.remove('active'));
-            if (section === 'paypal') { document.querySelectorAll('.payment-tab')[0].classList.add('active'); document.getElementById('paypalSection').classList.add('active'); }
-            else if (section === 'bank') { document.querySelectorAll('.payment-tab')[1].classList.add('active'); document.getElementById('bankSection').classList.add('active'); }
-            else if (section === 'code') { document.querySelectorAll('.payment-tab')[2].classList.add('active'); document.getElementById('codeSection').classList.add('active'); }
+            if (section === 'paypal') { document.getElementById('paypalTab').classList.add('active'); document.getElementById('paypalSection').classList.add('active'); }
+            else if (section === 'bank') { document.getElementById('bankTab').classList.add('active'); document.getElementById('bankSection').classList.add('active'); }
+            else if (section === 'code') { document.getElementById('codeTab').classList.add('active'); document.getElementById('codeSection').classList.add('active'); }
             else if (section === 'appstore') { document.getElementById('appStoreTab').classList.add('active'); document.getElementById('appStoreSection').classList.add('active'); }
         }
 
@@ -236,15 +236,17 @@
             const isAndroid = /android/i.test(navigator.userAgent);
             const nativePlatform = window.Capacitor && window.Capacitor.getPlatform ? window.Capacitor.getPlatform() : '';
             const isNativeApp = (window.CapacitorBridge && window.CapacitorBridge.isCapacitor) || isIOS || isAndroid;
-            if (isNativeApp) {
+            if (!isNativeApp) {
+                const isPlay = false;
+                document.getElementById('appStoreTab').style.display = 'none';
+                document.querySelectorAll('.web-only').forEach(el => el.style.display = '');
+                showSection('paypal');
+            } else {
                 const isPlay = nativePlatform === 'android' || isAndroid;
-                document.getElementById('appStoreTab').style.display = 'inline-block';
                 document.getElementById('appStoreTab').textContent = isPlay ? '▶️ Google Play' : '🍎 App Store';
                 document.getElementById('courseNameAppStore').textContent = isPlay ? currentCourse.name + ' (Google Play)' : currentCourse.name;
-                document.getElementById('appStoreSection').querySelector('h1').textContent = isPlay ? 'Compra en Google Play' : 'Compra en App Store';
+                document.getElementById('appStoreSectionTitle').textContent = isPlay ? 'Compra en Google Play' : 'Compra en App Store';
                 document.getElementById('appStoreBuyBtn').textContent = isPlay ? '▶️ Comprar con Google Play' : '🍎 Comprar con App Store';
-                document.getElementById('paypalTab').style.display = 'none';
-                document.getElementById('bankTab').style.display = 'none';
                 showSection('appstore');
             }
             if (params.get('verified') === 'true') { processPaypalVerification(); }
